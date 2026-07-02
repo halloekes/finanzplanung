@@ -2704,10 +2704,15 @@ document.addEventListener('keydown', (e) => {
 
 // ─────────────  GOOGLE DRIVE OAUTH (mobile / non-Chromium fallback)  ─────────────
 const OAUTH_CLIENT_ID = '566462258090-v2rvo8sosh4bhb8ikcna58kn6ro28on3.apps.googleusercontent.com';
-const ALLOWED_EMAILS = new Set([
-  'martin.wanitschke@gmail.com',
-  'maria.wanitschke@gmail.com',
+// SHA-256 hashes of lowercased allowed emails (nicht im Klartext gegen Spam-Bots)
+const ALLOWED_EMAIL_HASHES = new Set([
+  'f58fb370283fd80b9cd899fbf0d4720ea2d6f971212775909a15a540813949cd',
+  'de861171ed4a1969ba2794368bb34149e078ac8f1b4041c461973ebfb56461fe',
 ]);
+async function sha256Hex(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 const OAUTH_SCOPES = 'https://www.googleapis.com/auth/drive';
 const DRIVE_FILE_NAME = 'cashflow-data.json';
 const OAUTH_STATE_KEY = 'cashflow-oauth-state';
@@ -3382,7 +3387,9 @@ function showAuthGateError(msg) {
 }
 
 async function isEmailAuthorized(email) {
-  return email && ALLOWED_EMAILS.has(email.toLowerCase());
+  if (!email) return false;
+  const h = await sha256Hex(email.trim().toLowerCase());
+  return ALLOWED_EMAIL_HASHES.has(h);
 }
 
 async function tryPassAuthGate() {
