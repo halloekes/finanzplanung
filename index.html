@@ -2513,7 +2513,7 @@ async function exportToExcel() {
   // ─── Übersicht (Dashboard) ───
   const ws = XLSX.utils.aoa_to_sheet([[]]);
   // Row 1: Title
-  setCell(ws, 'A1', 'Familie Wanitschke — Cashflow', XSTYLE.title);
+  setCell(ws, 'A1', 'Cashflow', XSTYLE.title);
   // Row 2: subtitle
   setCell(ws, 'A2', `Stand: ${today}`, XSTYLE.subtitle);
   // Row 4: Section header — Zusammenfassung
