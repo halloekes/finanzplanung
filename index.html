@@ -1,0 +1,3433 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#faf7f2">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Cashflow">
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%23faf7f2%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22128%22%20font-family%3D%22Georgia%2Cserif%22%20font-weight%3D%22500%22%20font-size%3D%22120%22%20font-style%3D%22italic%22%20text-anchor%3D%22middle%22%20fill%3D%22%23b8893b%22%3EW%3C%2Ftext%3E%3C%2Fsvg%3E">
+<link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%20180%22%3E%3Crect%20width%3D%22180%22%20height%3D%22180%22%20fill%3D%22%23faf7f2%22%2F%3E%3Ctext%20x%3D%2290%22%20y%3D%22128%22%20font-family%3D%22Georgia%2Cserif%22%20font-weight%3D%22500%22%20font-size%3D%22120%22%20font-style%3D%22italic%22%20text-anchor%3D%22middle%22%20fill%3D%22%23b8893b%22%3EW%3C%2Ftext%3E%3C%2Fsvg%3E">
+<title>Cashflow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root {
+  --bg: #faf7f2;
+  --bg-elevated: #ffffff;
+  --bg-subtle: #f3efe8;
+  --ink: #1a1a1a;
+  --ink-muted: #6b6660;
+  --ink-soft: #a8a29e;
+  --line: #e8e2d8;
+  --line-strong: #d4ccbf;
+  --accent: #2d5f3f;
+  --accent-soft: #e8f0e9;
+  --warning: #8b2635;
+  --warning-soft: #f5e3e3;
+  --gold: #b8893b;
+  --gold-soft: #f5ecdb;
+
+  /* category colors */
+  --cat-lebenshaltung: #fce4d6;
+  --cat-wohnen: #ddebf7;
+  --cat-mobilitaet: #e2efda;
+  --cat-kinder: #f8e2ee;
+  --cat-sonstiges: #eaeaea;
+  --cat-kredit: #f4b7b7;
+  --cat-sparen: #c6efce;
+  --cat-ruecklage: #ffe699;
+  --cat-vers-schutz: #d9c7e8;
+  --cat-vers-sparen: #b4c7e7;
+
+  --shadow-sm: 0 1px 2px rgba(26, 26, 26, 0.04);
+  --shadow: 0 4px 16px rgba(26, 26, 26, 0.06);
+  --shadow-lg: 0 12px 40px rgba(26, 26, 26, 0.12);
+  --radius: 8px;
+  --radius-lg: 14px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; }
+
+body {
+  font-family: 'Manrope', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.5;
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+.mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+.serif { font-family: 'Fraunces', Georgia, serif; font-feature-settings: "ss01"; }
+
+/* ─────────────  AUTH GATE  ───────────── */
+.auth-gate {
+  position: fixed; inset: 0; z-index: 99999;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  padding: 2rem;
+}
+.auth-gate.hidden { display: none; }
+body.locked > *:not(.auth-gate):not(script) { visibility: hidden; }
+.auth-card {
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  padding: 2.5rem 2rem;
+}
+.auth-brand {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 2.5rem;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin-bottom: 0.4rem;
+}
+.auth-sub {
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+  margin-bottom: 2rem;
+}
+.auth-signin-btn {
+  width: 100%;
+  justify-content: center;
+  padding: 0.8rem 1.2rem;
+  font-size: 0.95rem;
+  background: white;
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-sm);
+}
+.auth-signin-btn:hover { background: var(--bg-subtle); border-color: var(--ink); opacity: 1; }
+.auth-error {
+  color: var(--warning);
+  font-size: 0.85rem;
+  margin-top: 1rem;
+  min-height: 1.2em;
+}
+.auth-footnote {
+  margin-top: 2.5rem;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* ─────────────  HEADER  ───────────── */
+header {
+  padding: 2.5rem 0 1.5rem;
+  border-bottom: 1px solid var(--line);
+}
+.header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 2rem;
+}
+.brand {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+}
+.brand span { color: var(--gold); font-style: italic; }
+.subtitle {
+  color: var(--ink-muted);
+  font-size: 0.875rem;
+}
+.header-tools { display: flex; align-items: center; gap: 0.2rem; }
+.header-tools .btn-ghost { font-size: 1rem; padding: 0.4rem 0.6rem; }
+.header-tools .btn-ghost:disabled { opacity: 0.3; cursor: default; background: transparent; }
+.header-tools .btn-ghost:disabled:hover { background: transparent; color: var(--ink-muted); }
+
+/* ─────────────  SALDO-STRIP  ───────────── */
+.saldo-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 0.4rem;
+}
+.saldo-strip-main { display: flex; align-items: baseline; gap: 0.65rem; flex-wrap: wrap; }
+.saldo-eyebrow {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--ink-muted);
+  font-weight: 600;
+}
+.saldo-inline {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 1.85rem;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.saldo-inline.negative { color: var(--warning); }
+.saldo-inline .euro { font-style: italic; font-weight: 300; opacity: 0.55; margin-right: 0.1rem; }
+.saldo-tagline {
+  font-style: italic;
+  font-family: 'Fraunces', serif;
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+.saldo-strip-stats { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+.ss-item { display: flex; flex-direction: column; align-items: flex-end; gap: 0.15rem; }
+.ss-lbl {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-muted);
+}
+.ss-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.ss-val.in { color: var(--accent); }
+.ss-val.out { color: var(--warning); }
+@media (max-width: 720px) {
+  .saldo-strip { flex-direction: column; align-items: flex-start; }
+  .saldo-strip-stats { width: 100%; justify-content: space-between; gap: 0.75rem; }
+  .ss-item { align-items: flex-start; }
+}
+
+/* ─────────────  CASHFLOW BREAKDOWN  ───────────── */
+.breakdown {
+  margin: 4rem 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem;
+}
+.section-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 1.625rem;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+}
+.section-eyebrow {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--gold);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+.section-desc {
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+  margin-bottom: 2rem;
+}
+
+.breakdown-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.5rem;
+  margin: 0 auto;
+  max-width: 720px;
+}
+.chart-wrap {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  max-width: 380px;
+  width: 100%;
+  margin: 0 auto;
+}
+.chart-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+}
+.chart-center-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ink-muted);
+  margin-bottom: 0.4rem;
+}
+.chart-center-value {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 1.85rem;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.chart-center-sub {
+  margin-top: 0.4rem;
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  letter-spacing: 0.05em;
+}
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  width: 100%;
+}
+.legend-row {
+  display: grid;
+  grid-template-columns: 14px 1fr auto auto;
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.55rem 0.25rem;
+  border-bottom: 1px dashed var(--line);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+.legend-row[data-group] { cursor: pointer; }
+.legend-row.total { cursor: default; }
+.legend-row:hover { background: rgba(0,0,0,0.02); }
+.legend-row.dim { opacity: 0.35; }
+.legend-row:last-child { border-bottom: none; }
+.legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  display: inline-block;
+}
+.legend-label { color: var(--ink); }
+.legend-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.875rem;
+}
+.legend-pct {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  min-width: 3.2rem;
+  text-align: right;
+}
+.legend-row.total {
+  font-weight: 600;
+  border-top: 2px solid var(--ink);
+  border-bottom: none;
+  margin-top: 0.4rem;
+  padding-top: 0.7rem;
+}
+.legend-row.total .legend-label { color: var(--ink); }
+.legend-row.total .legend-pct { visibility: hidden; }
+@media (max-width: 720px) {
+  .breakdown-grid { gap: 1.5rem; }
+}
+
+/* ─────────────  TABS  ───────────── */
+.tabs {
+  margin-top: 4rem;
+}
+.tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 2rem;
+  overflow-x: auto;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 1rem 1.5rem;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ink-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--ink); }
+.tab-btn.active {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+.tab-btn .count {
+  display: inline-block;
+  background: var(--bg-subtle);
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ─────────────  TABLE TOOLBAR  ───────────── */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.toolbar-left { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+.search-box {
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  width: 250px;
+  transition: border-color 0.15s;
+}
+.search-box:focus {
+  outline: none;
+  border-color: var(--ink);
+}
+.filter-chips { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.chip {
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  color: var(--ink-muted);
+}
+.chip:hover { border-color: var(--ink); }
+.chip.active {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+
+/* ─────────────  BUTTONS  ───────────── */
+.btn {
+  background: var(--ink);
+  color: var(--bg);
+  border: none;
+  padding: 0.55rem 1.1rem;
+  border-radius: var(--radius);
+  font-family: 'Manrope', sans-serif;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.05s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.btn:hover { opacity: 0.85; }
+.btn:active { transform: translateY(1px); }
+.btn-secondary {
+  background: var(--bg-elevated);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+.btn-secondary:hover { border-color: var(--ink); opacity: 1; }
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-muted);
+  padding: 0.4rem 0.6rem;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-ghost:hover { background: var(--bg-subtle); color: var(--ink); }
+.btn-danger { color: var(--warning); }
+.btn-danger:hover { background: var(--warning-soft); }
+
+/* ─────────────  DATA TABLE  ───────────── */
+.data-table-wrap {
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.data-table thead th {
+  background: var(--bg-subtle);
+  text-align: left;
+  padding: 0.85rem 1rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+  vertical-align: top;
+}
+.data-table thead th.sortable { cursor: pointer; user-select: none; }
+.data-table thead th.sortable:hover { color: var(--ink); }
+.data-table thead th.sortable .sort-ind {
+  display: inline-block;
+  margin-left: 0.3rem;
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  transition: color 0.15s;
+}
+.data-table thead th.sortable.sorted .sort-ind { color: var(--ink); }
+.data-table thead th .col-flex {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+.data-table thead .filter-row th {
+  background: var(--bg-elevated);
+  padding: 0.4rem 0.55rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.75rem;
+  border-bottom: 1px solid var(--line);
+}
+.data-table thead .filter-row input,
+.data-table thead .filter-row select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 0.3rem 0.5rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  background: var(--bg);
+  color: var(--ink);
+  transition: border-color 0.15s;
+}
+.data-table thead .filter-row input:focus,
+.data-table thead .filter-row select:focus {
+  outline: none;
+  border-color: var(--ink);
+}
+.data-table thead .filter-row input::placeholder {
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 1rem;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--line);
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.tf-summary {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: baseline;
+  font-family: 'Manrope', sans-serif;
+}
+.tf-summary .tf-count { font-weight: 500; color: var(--ink); }
+.tf-summary .tf-sum {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  font-weight: 600;
+}
+.tf-summary .sep { opacity: 0.4; margin: 0 0.15rem; }
+.tf-filter-clear { font-size: 0.75rem; }
+.tf-filter-clear a {
+  color: var(--ink-muted);
+  text-decoration: underline dotted;
+  cursor: pointer;
+}
+.tf-filter-clear a:hover { color: var(--ink); }
+.tf-filter-clear.hidden { display: none; }
+.data-table tbody td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr {
+  transition: background 0.1s;
+}
+.data-table tbody tr.inactive {
+  opacity: 0.4;
+}
+.data-table tbody tr:hover {
+  background: rgba(0,0,0,0.02);
+}
+.data-table .col-num { font-family: 'JetBrains Mono', monospace; text-align: right; }
+.data-table .col-actions { text-align: right; white-space: nowrap; }
+.data-table .col-checkbox { width: 36px; }
+.data-table .checkbox {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: var(--bg-elevated);
+  transition: all 0.15s;
+  vertical-align: middle;
+}
+.data-table .checkbox.checked {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.data-table .checkbox.checked::after {
+  content: "✓";
+  color: var(--bg);
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.cat-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.cat-Lebenshaltung { background: var(--cat-lebenshaltung); }
+.cat-Wohnen { background: var(--cat-wohnen); }
+.cat-Mobilität { background: var(--cat-mobilitaet); }
+.cat-Kinder { background: var(--cat-kinder); }
+.cat-Sonstiges { background: var(--cat-sonstiges); }
+.cat-Kredit { background: var(--cat-kredit); }
+.cat-Sparen { background: var(--cat-sparen); }
+.cat-Rücklage { background: var(--cat-ruecklage); }
+.cat-VersicherungSchutz { background: var(--cat-vers-schutz); }
+.cat-VersicherungSparen { background: var(--cat-vers-sparen); }
+
+.kapb-badge {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  background: var(--gold-soft);
+  color: var(--gold);
+  font-weight: 500;
+}
+
+.empty-state {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+/* ─────────────  MODAL  ───────────── */
+dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 0;
+  max-width: 540px;
+  width: calc(100% - 2rem);
+  max-height: calc(100vh - 2rem);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-lg);
+  font-family: 'Manrope', sans-serif;
+  color: var(--ink);
+}
+dialog::backdrop {
+  background: rgba(26, 26, 26, 0.4);
+  backdrop-filter: blur(6px);
+}
+.modal-header {
+  padding: 1.5rem 2rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.modal-header h2 {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+}
+.modal-header .modal-sub {
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+.modal-body {
+  padding: 1.5rem 2rem;
+  max-height: 65vh;
+  overflow-y: auto;
+}
+.modal-footer {
+  padding: 1rem 2rem 1.5rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+.field { margin-bottom: 1.1rem; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.field label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.4rem;
+}
+.field input, .field select, .field textarea {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.95rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--ink);
+  transition: border-color 0.15s;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: none;
+  border-color: var(--ink);
+}
+.field input.mono { font-family: 'JetBrains Mono', monospace; }
+.field-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.field-checkbox input { width: auto; }
+.field-checkbox label {
+  margin: 0;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+.field-help {
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+  margin-top: 0.3rem;
+  font-style: italic;
+}
+
+/* ─────────────  FOOTER  ───────────── */
+footer {
+  margin-top: 6rem;
+  padding: 3rem 0;
+  border-top: 1px solid var(--line);
+  text-align: center;
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+}
+.footer-tools {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+.footer-meta {
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  margin-top: 0.6rem;
+}
+.footer-meta a {
+  color: var(--ink-muted);
+  text-decoration: underline dotted;
+  cursor: pointer;
+}
+.footer-meta a:hover { color: var(--ink); }
+.footer-meta .sep { margin: 0 0.4rem; opacity: 0.4; }
+.drive-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  background: var(--bg-subtle);
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  color: var(--ink-muted);
+}
+.drive-status-pill.connected { background: var(--accent-soft); color: var(--accent); }
+.drive-status-pill .dot {
+  width: 6px; height: 6px;
+  border-radius: 999px;
+  background: var(--ink-soft);
+}
+.drive-status-pill.connected .dot { background: var(--accent); }
+
+/* File-Connection Banner */
+.file-banner {
+  max-width: 1200px;
+  margin: 1.25rem auto 0;
+  padding: 1.25rem 1.75rem;
+  background: #e8f0f7;
+  border: 1px solid #b8d0e3;
+  color: #1a3a5c;
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.file-banner.hidden { display: none; }
+.file-banner h3 {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+.file-banner p {
+  font-size: 0.9rem;
+  color: #2d4a6e;
+  line-height: 1.5;
+}
+.file-banner code {
+  background: #d8e4f0;
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+}
+.banner-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.4rem;
+}
+.banner-actions button {
+  background: #1a3a5c;
+  color: white;
+  border: none;
+  padding: 0.55rem 1.1rem;
+  border-radius: var(--radius);
+  font-family: 'Manrope', sans-serif;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.banner-actions button:hover { opacity: 0.85; }
+.banner-actions button.btn-banner-secondary {
+  background: white;
+  color: #1a3a5c;
+  border: 1px solid #b8d0e3;
+}
+.file-banner.warn { background: #fdf3e0; border-color: #e8c98c; color: #5c4419; }
+.file-banner.warn p { color: #7a5d2a; }
+.file-banner.warn code { background: #f0dcb5; }
+.file-banner.warn .banner-actions button { background: #5c4419; }
+.file-banner.warn .banner-actions button.btn-banner-secondary {
+  background: white;
+  color: #5c4419;
+  border: 1px solid #e8c98c;
+}
+.file-banner.error { background: #f8e3e3; border-color: #e8a4a4; color: #5c1919; }
+.file-banner.error p { color: #7a2a2a; }
+
+/* File-Sync dialog */
+#drive-modal { max-width: 520px; }
+.drive-step {
+  padding: 1rem 0;
+  border-bottom: 1px dashed var(--line);
+}
+.drive-step:last-child { border-bottom: none; }
+.drive-step h4 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-muted);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+.drive-step p { font-size: 0.85rem; line-height: 1.55; margin-bottom: 0.5rem; }
+.drive-step code {
+  background: var(--bg-subtle);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+}
+.drive-step ol, .drive-step ul {
+  margin: 0.4rem 0 0.4rem 1.2rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.drive-step ol li, .drive-step ul li { margin-bottom: 0.2rem; }
+.drive-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+.drive-info {
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+.toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  font-size: 0.875rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 9999;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-6px);
+}
+
+@media (max-width: 720px) {
+  .container { padding: 0 1rem; }
+  .breakdown-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+  .hero-stats { grid-template-columns: 1fr; }
+  .breakdown { padding: 1.5rem; }
+  .data-table { font-size: 0.8rem; }
+  .data-table thead th, .data-table tbody td { padding: 0.5rem 0.5rem; }
+  .field-row { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════════════════
+   MOBILE (iPhone/Handy) — bis ~500px
+   ═══════════════════════════════════════════ */
+@media (max-width: 500px) {
+  .container { padding: 0 0.75rem; }
+
+  /* Header */
+  header { padding: 1.25rem 0 0.75rem; }
+  .header-inner { flex-wrap: wrap; gap: 0.5rem; }
+  .brand { font-size: 1.15rem; }
+  .subtitle { font-size: 0.75rem; }
+  .header-tools { position: absolute; top: 0.75rem; right: 0.75rem; }
+  .header-tools .btn-ghost { padding: 0.3rem 0.4rem; font-size: 0.9rem; }
+  .header-tools #btn-print { display: none; } /* auf mobil selten gebraucht */
+
+  /* Banner */
+  .file-banner { padding: 0.9rem 1rem; }
+  .file-banner h3 { font-size: 0.95rem; }
+  .file-banner p { font-size: 0.85rem; }
+  .banner-actions button { padding: 0.5rem 0.9rem; font-size: 0.85rem; }
+
+  /* Saldo strip: klarer Stack */
+  .breakdown { padding: 1rem; }
+  .saldo-strip-main { flex-direction: column; align-items: flex-start; gap: 0.15rem; }
+  .saldo-inline { font-size: 1.6rem; }
+  .saldo-tagline { font-size: 0.85rem; }
+  .saldo-strip-stats { gap: 0.4rem; width: 100%; justify-content: space-between; }
+  .ss-item { align-items: flex-start; }
+  .ss-val { font-size: 0.85rem; }
+  .ss-lbl { font-size: 0.6rem; }
+
+  /* Chart etwas kleiner */
+  .chart-wrap { max-width: 260px; }
+  .chart-center-value { font-size: 1.5rem; }
+
+  /* Tabs — smaller */
+  .tab-btn { padding: 0.7rem 0.85rem; font-size: 0.82rem; }
+  .tab-btn .count { padding: 0.05rem 0.4rem; font-size: 0.7rem; }
+
+  /* Toolbar über Full-Width */
+  .toolbar { flex-direction: column; align-items: stretch; }
+  .toolbar-left { width: 100%; }
+  .search-box { width: 100%; }
+  .toolbar .btn { width: 100%; justify-content: center; }
+
+  /* Tabellen: horizontal scrollen, alle Spalten sichtbar bleiben */
+  .data-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .data-table {
+    font-size: 0.78rem;
+    min-width: max-content; /* zwingt Tabelle in ihre natürliche Breite → scroll */
+  }
+  .data-table thead th, .data-table tbody td { padding: 0.5rem 0.6rem; white-space: nowrap; }
+  .data-table td:nth-child(2) { white-space: normal; min-width: 180px; } /* Bezeichnung darf wrappen */
+  .data-table .col-num { text-align: right; }
+
+  /* Sticky first columns (Aktiv + Bezeichnung) beim horizontalen Scroll */
+  .data-table thead th:nth-child(1),
+  .data-table tbody td:nth-child(1) {
+    position: sticky;
+    left: 0;
+    background: var(--bg-elevated);
+    z-index: 2;
+  }
+  .data-table thead .filter-row th:nth-child(1) { background: var(--bg-elevated); }
+
+  /* Aktion-Icons größer für Fingertap */
+  .btn-ghost { padding: 0.5rem 0.55rem; font-size: 1rem; }
+
+  /* Modal Full-Screen mobil */
+  dialog {
+    max-width: none;
+    width: 100%;
+    max-height: 100dvh;
+    height: 100dvh;
+    margin: 0;
+    border-radius: 0;
+  }
+  .modal-body { max-height: calc(100dvh - 140px); }
+
+  /* Footer kompakter */
+  footer { padding: 2rem 0 1.5rem; margin-top: 3rem; }
+  .footer-tools { gap: 0.5rem; }
+  .footer-tools .btn { padding: 0.5rem 0.85rem; font-size: 0.8rem; }
+  .footer-meta { font-size: 0.7rem; }
+
+}
+
+@media print {
+  .toolbar, .tab-bar, .col-actions, .col-checkbox, footer, .btn, .toast { display: none !important; }
+  body { background: white; }
+  .breakdown, .data-table-wrap { box-shadow: none; border: 1px solid #ccc; }
+  .tab-content { display: block !important; page-break-before: always; }
+}
+</style>
+</head>
+<body class="locked">
+
+<div id="auth-gate" class="auth-gate">
+  <div class="auth-card">
+    <div class="auth-brand">Cashflow</div>
+    <div class="auth-sub">Anmeldung erforderlich</div>
+    <button type="button" class="btn auth-signin-btn" id="auth-signin-btn">
+      <svg width="18" height="18" viewBox="0 0 24 24" style="vertical-align: -3px; margin-right: 6px;"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Mit Google anmelden
+    </button>
+    <div id="auth-error" class="auth-error"></div>
+    <div class="auth-footnote">Nur autorisierte Familienmitglieder</div>
+  </div>
+</div>
+
+<header>
+  <div class="container header-inner">
+    <div>
+      <div class="brand">Cashflow</div>
+      <div class="subtitle">Monatliche Übersicht — alle Beträge auf Monat normalisiert</div>
+    </div>
+    <div class="header-tools">
+      <button class="btn-ghost" id="btn-undo" title="Rückgängig (⌘Z)" disabled>↶</button>
+      <button class="btn-ghost" id="btn-redo" title="Wiederherstellen (⌘⇧Z)" disabled>↷</button>
+      <button class="btn-ghost" id="btn-print" title="Drucken">⎙ Drucken</button>
+    </div>
+  </div>
+</header>
+
+<div id="file-banner" class="file-banner hidden">
+  <h3 id="banner-title">📁 App ist noch nicht mit deiner Datei verbunden</h3>
+  <p id="banner-text">Verbinde die App einmalig mit einer JSON-Datei in deinem Drive-Ordner. Ab dann läuft Auto-Save direkt dorthin und Drive Desktop synct den Rest.</p>
+  <div class="banner-actions">
+    <button id="banner-setup-btn" style="display:none">Datei einrichten</button>
+    <button id="banner-open-btn" class="btn-banner-secondary" style="display:none">Datei öffnen…</button>
+    <button id="banner-new-btn" class="btn-banner-secondary" style="display:none">Neue Datei anlegen…</button>
+    <button id="banner-grant-btn" style="display:none">Zulassen</button>
+    <button id="banner-oauth-btn" style="display:none">Mit Google verbinden</button>
+    <button id="banner-cancel-btn" class="btn-banner-secondary" style="display:none">Abbrechen</button>
+  </div>
+</div>
+
+<section class="breakdown container">
+  <div class="saldo-strip">
+    <div class="saldo-strip-main">
+      <span class="saldo-eyebrow">Saldo am Monatsende</span>
+      <span class="saldo-inline" id="saldo-display">
+        <span class="euro">€</span><span id="saldo-value">0</span>
+      </span>
+      <span class="saldo-tagline" id="saldo-tagline">— bleibt übrig —</span>
+    </div>
+    <div class="saldo-strip-stats">
+      <div class="ss-item"><span class="ss-lbl">Einnahmen</span><span class="ss-val in" id="stat-einnahmen">0,00 €</span></div>
+      <div class="ss-item"><span class="ss-lbl">Ausgaben</span><span class="ss-val out" id="stat-ausgaben">0,00 €</span></div>
+      <div class="ss-item"><span class="ss-lbl">Sparen &amp; Tilgung</span><span class="ss-val" id="stat-sparen">0,00 €</span></div>
+    </div>
+  </div>
+  <div class="section-desc" style="margin-top: 0.25rem;">Klick auf eine Kategorie im Diagramm springt zur gefilterten Tabelle.</div>
+
+  <div class="breakdown-grid">
+    <div class="chart-wrap">
+      <canvas id="expense-chart"></canvas>
+      <div class="chart-center">
+        <div class="chart-center-label">Ausgaben gesamt</div>
+        <div class="chart-center-value" id="chart-total">–</div>
+        <div class="chart-center-sub">pro Monat</div>
+      </div>
+    </div>
+    <div class="legend" id="expense-legend"></div>
+  </div>
+</section>
+
+<section class="container tabs">
+  <div class="tab-bar" role="tablist">
+    <button class="tab-btn active" data-tab="einnahmen">Einnahmen <span class="count" id="cnt-einnahmen">0</span></button>
+    <button class="tab-btn" data-tab="positionen">Ausgaben &amp; Sparen <span class="count" id="cnt-positionen">0</span></button>
+    <button class="tab-btn" data-tab="versicherungen">Versicherungen <span class="count" id="cnt-versicherungen">0</span></button>
+    <button class="tab-btn" data-tab="konten">Konto-Verteilung</button>
+  </div>
+
+  <!-- Einnahmen -->
+  <div class="tab-content active" data-content="einnahmen">
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <input type="search" class="search-box" id="search-einnahmen" placeholder="Suchen…">
+      </div>
+      <button class="btn" data-add="einnahme">+ Neue Einnahme</button>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table" id="table-einnahmen">
+        <thead>
+          <tr>
+            <th class="col-checkbox"></th>
+            <th class="sortable" data-sort-table="einnahmen" data-sort-key="bezeichnung"><span class="col-flex">Bezeichnung<span class="sort-ind"></span></span></th>
+            <th class="col-num sortable" data-sort-table="einnahmen" data-sort-key="betrag"><span class="col-flex">Betrag<span class="sort-ind"></span></span></th>
+            <th class="sortable" data-sort-table="einnahmen" data-sort-key="proJahr"><span class="col-flex">Frequenz<span class="sort-ind"></span></span></th>
+            <th class="col-num sortable" data-sort-table="einnahmen" data-sort-key="monatlich"><span class="col-flex">Monatlich<span class="sort-ind"></span></span></th>
+            <th>Kommentar</th>
+            <th class="col-actions"></th>
+          </tr>
+          <tr class="filter-row">
+            <th></th>
+            <th><input type="text" data-filter-table="einnahmen" data-filter-col="bezeichnung" placeholder="filter…"></th>
+            <th></th>
+            <th>
+              <select data-filter-table="einnahmen" data-filter-col="proJahr">
+                <option value="">alle</option>
+                <option value="12">monatlich</option>
+                <option value="4">quartalsweise</option>
+                <option value="2">halbjährlich</option>
+                <option value="1">jährlich</option>
+              </select>
+            </th>
+            <th></th>
+            <th><input type="text" data-filter-table="einnahmen" data-filter-col="kommentar" placeholder="filter…"></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="table-footer">
+        <span class="tf-summary">
+          <span class="tf-count" id="tf-count-einnahmen">0</span> Einträge
+          <span class="sep">·</span>
+          Σ <span class="tf-sum" id="tf-sum-einnahmen">0,00 €</span> / Monat
+        </span>
+        <span class="tf-filter-clear hidden" id="filter-clear-einnahmen">
+          Filter aktiv · <a data-clear-filters="einnahmen">alle löschen</a>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Positionen -->
+  <div class="tab-content" data-content="positionen">
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <input type="search" class="search-box" id="search-positionen" placeholder="Suchen…">
+      </div>
+      <button class="btn" data-add="position">+ Neue Position</button>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table" id="table-positionen">
+        <thead>
+          <tr>
+            <th class="col-checkbox"></th>
+            <th class="sortable" data-sort-table="positionen" data-sort-key="bezeichnung"><span class="col-flex">Bezeichnung<span class="sort-ind"></span></span></th>
+            <th class="sortable" data-sort-table="positionen" data-sort-key="kategorie"><span class="col-flex">Kategorie<span class="sort-ind"></span></span></th>
+            <th class="sortable" data-sort-table="positionen" data-sort-key="zielkonto"><span class="col-flex">Ziel<span class="sort-ind"></span></span></th>
+            <th class="col-num sortable" data-sort-table="positionen" data-sort-key="betrag"><span class="col-flex">Betrag<span class="sort-ind"></span></span></th>
+            <th class="sortable" data-sort-table="positionen" data-sort-key="proJahr"><span class="col-flex">Frequenz<span class="sort-ind"></span></span></th>
+            <th class="col-num sortable" data-sort-table="positionen" data-sort-key="monatlich"><span class="col-flex">Monatlich<span class="sort-ind"></span></span></th>
+            <th class="col-actions"></th>
+          </tr>
+          <tr class="filter-row">
+            <th></th>
+            <th><input type="text" data-filter-table="positionen" data-filter-col="bezeichnung" placeholder="filter…"></th>
+            <th><select data-filter-table="positionen" data-filter-col="kategorie"><option value="">alle</option></select></th>
+            <th><select data-filter-table="positionen" data-filter-col="zielkonto"><option value="">alle</option></select></th>
+            <th></th>
+            <th>
+              <select data-filter-table="positionen" data-filter-col="proJahr">
+                <option value="">alle</option>
+                <option value="12">monatlich</option>
+                <option value="4">quartalsweise</option>
+                <option value="2">halbjährlich</option>
+                <option value="1">jährlich</option>
+              </select>
+            </th>
+            <th></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="table-footer">
+        <span class="tf-summary">
+          <span class="tf-count" id="tf-count-positionen">0</span> Positionen
+          <span class="sep">·</span>
+          Σ <span class="tf-sum" id="tf-sum-positionen">0,00 €</span> / Monat
+        </span>
+        <span class="tf-filter-clear hidden" id="filter-clear-positionen">
+          Filter aktiv · <a data-clear-filters="positionen">alle löschen</a>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Versicherungen -->
+  <div class="tab-content" data-content="versicherungen">
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <input type="search" class="search-box" id="search-versicherungen" placeholder="Suchen…">
+      </div>
+      <button class="btn" data-add="versicherung">+ Neue Versicherung</button>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table" id="table-versicherungen">
+        <thead>
+          <tr>
+            <th class="col-checkbox"></th>
+            <th class="sortable" data-sort-table="versicherungen" data-sort-key="versicherer"><span class="col-flex">Versicherer<span class="sort-ind"></span></span></th>
+            <th class="sortable" data-sort-table="versicherungen" data-sort-key="bezeichnung"><span class="col-flex">Bezeichnung<span class="sort-ind"></span></span></th>
+            <th>VN / VP</th>
+            <th class="sortable" data-sort-table="versicherungen" data-sort-key="kapitalbildend"><span class="col-flex">Typ<span class="sort-ind"></span></span></th>
+            <th class="col-num sortable" data-sort-table="versicherungen" data-sort-key="betrag"><span class="col-flex">Beitrag<span class="sort-ind"></span></span></th>
+            <th class="sortable" data-sort-table="versicherungen" data-sort-key="proJahr"><span class="col-flex">Frequenz<span class="sort-ind"></span></span></th>
+            <th class="col-num sortable" data-sort-table="versicherungen" data-sort-key="monatlich"><span class="col-flex">Monatlich<span class="sort-ind"></span></span></th>
+            <th class="col-actions"></th>
+          </tr>
+          <tr class="filter-row">
+            <th></th>
+            <th><select data-filter-table="versicherungen" data-filter-col="versicherer"><option value="">alle</option></select></th>
+            <th><input type="text" data-filter-table="versicherungen" data-filter-col="bezeichnung" placeholder="filter…"></th>
+            <th><input type="text" data-filter-table="versicherungen" data-filter-col="vnvp" placeholder="filter…"></th>
+            <th>
+              <select data-filter-table="versicherungen" data-filter-col="kapitalbildend">
+                <option value="">alle</option>
+                <option value="schutz">Schutz</option>
+                <option value="kapital">kapitalbildend</option>
+              </select>
+            </th>
+            <th></th>
+            <th>
+              <select data-filter-table="versicherungen" data-filter-col="proJahr">
+                <option value="">alle</option>
+                <option value="12">monatlich</option>
+                <option value="4">quartalsweise</option>
+                <option value="2">halbjährlich</option>
+                <option value="1">jährlich</option>
+              </select>
+            </th>
+            <th></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="table-footer">
+        <span class="tf-summary">
+          <span class="tf-count" id="tf-count-versicherungen">0</span> Verträge
+          <span class="sep">·</span>
+          Σ <span class="tf-sum" id="tf-sum-versicherungen">0,00 €</span> / Monat
+        </span>
+        <span class="tf-filter-clear hidden" id="filter-clear-versicherungen">
+          Filter aktiv · <a data-clear-filters="versicherungen">alle löschen</a>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Konten -->
+  <div class="tab-content" data-content="konten">
+    <div class="data-table-wrap">
+      <table class="data-table" id="table-konten">
+        <thead>
+          <tr>
+            <th>Konto</th>
+            <th>Owner</th>
+            <th class="col-num">Zufluss</th>
+            <th class="col-num">Abfluss</th>
+            <th class="col-num">Netto</th>
+            <th>Was läuft hier durch</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<footer class="container">
+  <div class="footer-tools">
+    <button class="btn-secondary btn" id="btn-export-xlsx">↓ Excel (mit Formeln)</button>
+    <button class="btn-secondary btn" id="btn-export">↓ JSON exportieren</button>
+    <button class="btn-secondary btn" id="btn-import">↑ JSON importieren</button>
+    <button class="btn-secondary btn btn-danger" id="btn-reset">Zurücksetzen</button>
+    <input type="file" id="import-file" accept=".json" style="display: none;">
+  </div>
+  <div>Daten werden lokal gespeichert. Für Sync zwischen Geräten/Personen: Datei-Verbindung im Drive-Ordner.</div>
+  <div class="footer-meta">
+    <a id="link-drive">Datei-Verbindung</a>
+    <span id="drive-pill-wrap"></span>
+    <span class="sep">·</span>
+    Version 3 · <code class="mono">cashflow-wanitschke-v1</code>
+  </div>
+</footer>
+
+<dialog id="drive-modal">
+  <div class="modal-header">
+    <h2>Datei-Verbindung</h2>
+    <div class="modal-sub">Auto-Save direkt in deine Drive-Datei — die Synchronisation macht Drive Desktop.</div>
+  </div>
+  <div class="modal-body">
+    <div class="drive-step">
+      <h4>Status</h4>
+      <div id="drive-status-text" style="font-size: 0.9rem;">—</div>
+    </div>
+    <div class="drive-step">
+      <h4>So funktioniert's</h4>
+      <ol>
+        <li>Google Drive für Desktop installieren (<a href="https://google.com/drive/download" target="_blank" rel="noreferrer">google.com/drive/download</a>) — Drive-Ordner erscheint dann als normaler Finder-Ordner.</li>
+        <li>Diese HTML-Datei und die JSON-Datei legst du gemeinsam in einen Ordner deines Drives.</li>
+        <li>HTML in <strong>Chrome/Edge</strong> per Doppelklick öffnen, dann unten auf „Datei einrichten" → JSON auswählen → „Zulassen". Fertig.</li>
+        <li>Auto-Save läuft. Drive Desktop synct die geänderte JSON in die Cloud, die zweite Person sieht's beim nächsten <code>⌘R</code>.</li>
+      </ol>
+      <p class="drive-info">⚠️ Funktioniert nur in Chromium-Browsern (Chrome, Edge, Brave) — Safari und Firefox unterstützen die File System Access API nicht.</p>
+    </div>
+    <div class="drive-step">
+      <h4>Aktionen</h4>
+      <div class="drive-actions">
+        <button type="button" class="btn" id="drive-pick-btn">Datei (neu) wählen</button>
+        <button type="button" class="btn btn-secondary" id="drive-reload-btn">Datei jetzt neu laden</button>
+        <button type="button" class="btn btn-secondary" id="drive-write-btn">Jetzt sichern</button>
+        <button type="button" class="btn-ghost" id="drive-disconnect-btn">Verbindung trennen</button>
+      </div>
+      <p class="drive-info" id="drive-last-sync"></p>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn-secondary btn" data-close>Schließen</button>
+  </div>
+</dialog>
+
+<dialog id="modal">
+  <form id="modal-form">
+    <div class="modal-header">
+      <h2 id="modal-title">Eintrag</h2>
+      <div class="modal-sub" id="modal-sub"></div>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary btn" data-close>Abbrechen</button>
+      <button type="submit" class="btn">Speichern</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="confirm-modal">
+  <div class="modal-header">
+    <h2>Wirklich löschen?</h2>
+    <div class="modal-sub" id="confirm-text">Dieser Eintrag wird endgültig entfernt.</div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn-secondary btn" data-close>Abbrechen</button>
+    <button type="button" class="btn btn-danger" id="confirm-yes" style="background: var(--warning); color: white;">Löschen</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+// ─────────────  CONSTANTS  ─────────────
+const STORAGE_KEY = 'cashflow-wanitschke-v1';
+const KATEGORIEN = ['Lebenshaltung', 'Wohnen', 'Mobilität', 'Kinder', 'Sonstiges', 'Kredit', 'Sparen', 'Rücklage'];
+const KONTEN_DEFAULT = [
+  // Tagesgeschäft / Liquidität
+  'ING DiBa Giro',
+  'bunq Lebenshaltungskonto',
+  'bunq Urlaubskonto',
+  'bunq Sparkonto',
+  // Eltern (gemeinsam)
+  'Scalable Capital (grow grow grow)',
+  'Scalable Capital (Rente)',
+  'ING DiBa Depot Eltern',
+  // Martin
+  'TradeRepublic Martin',
+  // Maria
+  'TradeRepublic Maria',
+  // Lina
+  'Scalable Capital Lina',
+  'ING DiBa Depot Lina',
+  // Pippa
+  'Scalable Capital Pippa',
+  'ING DiBa Depot Pippa',
+];
+// KONTEN is now derived from state (user can add new ones)
+function getKonten() { return (state && state.konten) ? state.konten : KONTEN_DEFAULT; }
+const FREQUENZEN = [[12, 'monatlich'], [4, 'quartalsweise'], [2, 'halbjährlich'], [1, 'jährlich']];
+
+// ─────────────  DEFAULT DATA  ─────────────
+// Nur Beispiel-Struktur — echte Daten leben ausschließlich in der privaten Drive-JSON.
+const GIRO = 'ING DiBa Giro';
+const DEFAULT_DATA = {
+  version: 2,
+  konten: [...KONTEN_DEFAULT],
+  einnahmen: [
+    { id: 'e1', aktiv: false, bezeichnung: 'Beispiel Einnahme', zielkonto: GIRO, betrag: 0, proJahr: 12, kommentar: 'Verbinde mit deiner Drive-JSON' },
+  ],
+  positionen: [
+    { id: 'p1', aktiv: false, bezeichnung: 'Beispiel Ausgabe', kategorie: 'Sonstiges', quellkonto: GIRO, zielkonto: '', betrag: 0, proJahr: 12, kommentar: 'Verbinde mit deiner Drive-JSON' },
+  ],
+  versicherungen: [
+    { id: 'v1', aktiv: false, versicherer: 'Beispiel', bezeichnung: 'Beispiel Versicherung', vertragsnummer: '', vn: '', vp: '', kapitalbildend: false, quellkonto: 'ING DiBa Giro', betrag: 0, proJahr: 12, kommentar: 'Verbinde mit deiner Drive-JSON' },
+  ],
+};
+
+// ─────────────  STATE  ─────────────
+let state = loadState();
+let activeTab = 'einnahmen';
+let searchQueries = { einnahmen: '', positionen: '', versicherungen: '' };
+let tableState = {
+  einnahmen:      { sortBy: null, sortDir: 'asc', filters: {} },
+  positionen:     { sortBy: null, sortDir: 'asc', filters: {} },
+  versicherungen: { sortBy: null, sortDir: 'asc', filters: {} },
+};
+
+function loadState() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return migrateState(parsed);
+    }
+  } catch (e) {
+    console.warn('Fehler beim Laden:', e);
+  }
+  return JSON.parse(JSON.stringify(DEFAULT_DATA));
+}
+
+function migrateState(s) {
+  if (!s || !s.einnahmen) return JSON.parse(JSON.stringify(DEFAULT_DATA));
+  if ((s.version || 1) < 2) {
+    if (!s.konten) s.konten = KONTEN_DEFAULT.slice();
+    (s.positionen || []).forEach(p => {
+      // Old semantics: konto was source for expenses, destination for savings.
+      // Migrate: if old konto === Giro, it was source-only (external destination).
+      // If old konto !== Giro, it was destination; source defaults to Giro.
+      if (p.konto === GIRO) {
+        p.quellkonto = GIRO;
+        p.zielkonto = '';
+      } else if (p.konto) {
+        p.quellkonto = GIRO;
+        p.zielkonto = p.konto;
+      } else {
+        p.quellkonto = p.quellkonto || GIRO;
+        p.zielkonto = p.zielkonto || '';
+      }
+      delete p.konto;
+    });
+    (s.einnahmen || []).forEach(e => {
+      if (!e.zielkonto) e.zielkonto = GIRO;
+    });
+    (s.versicherungen || []).forEach(v => {
+      if (v.konto && !v.quellkonto) { v.quellkonto = v.konto; delete v.konto; }
+      if (!v.quellkonto) v.quellkonto = GIRO;
+    });
+    s.version = 2;
+  }
+  if (!s.konten) s.konten = KONTEN_DEFAULT.slice();
+  return s;
+}
+
+function saveState() {
+  state.lastModified = new Date().toISOString();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  if (typeof scheduleAutoSync === 'function') scheduleAutoSync();
+}
+
+// ─────────────  UNDO / REDO  ─────────────
+const HISTORY_LIMIT = 100;
+let historyStack = [];
+let redoStack = [];
+
+function pushHistory() {
+  historyStack.push(JSON.stringify(state));
+  if (historyStack.length > HISTORY_LIMIT) historyStack.shift();
+  redoStack = [];
+  updateUndoUi();
+}
+
+function undo() {
+  if (historyStack.length === 0) return;
+  redoStack.push(JSON.stringify(state));
+  state = JSON.parse(historyStack.pop());
+  saveState();
+  render();
+  updateUndoUi();
+  showToast('Rückgängig');
+}
+
+function redo() {
+  if (redoStack.length === 0) return;
+  historyStack.push(JSON.stringify(state));
+  state = JSON.parse(redoStack.pop());
+  saveState();
+  render();
+  updateUndoUi();
+  showToast('Wiederhergestellt');
+}
+
+function updateUndoUi() {
+  const btnU = document.getElementById('btn-undo');
+  const btnR = document.getElementById('btn-redo');
+  if (btnU) btnU.disabled = historyStack.length === 0;
+  if (btnR) btnR.disabled = redoStack.length === 0;
+}
+
+function newId(prefix) {
+  return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+}
+
+// ─────────────  COMPUTATIONS  ─────────────
+function monatlich(item) {
+  if (!item.aktiv) return 0;
+  return (Number(item.betrag) || 0) * (Number(item.proJahr) || 0) / 12;
+}
+
+function compute() {
+  const sumE = state.einnahmen.reduce((s, e) => s + monatlich(e), 0);
+
+  const sumByCat = {};
+  KATEGORIEN.forEach(k => sumByCat[k] = 0);
+  state.positionen.forEach(p => {
+    if (sumByCat[p.kategorie] !== undefined) sumByCat[p.kategorie] += monatlich(p);
+  });
+
+  const versSchutz = state.versicherungen.filter(v => !v.kapitalbildend).reduce((s, v) => s + monatlich(v), 0);
+  const versSparen = state.versicherungen.filter(v => v.kapitalbildend).reduce((s, v) => s + monatlich(v), 0);
+
+  const laufendSum = sumByCat.Lebenshaltung + sumByCat.Wohnen + sumByCat.Mobilität + sumByCat.Kinder + sumByCat.Sonstiges;
+  const versSum = versSchutz + versSparen;
+  const sumA = laufendSum + versSum + sumByCat.Kredit + sumByCat.Sparen + sumByCat.Rücklage;
+  const saldo = sumE - sumA;
+
+  // Konto-Verteilung: Zufluss + Abfluss + Netto pro Konto
+  const kontoFlow = {};
+  getKonten().forEach(k => kontoFlow[k] = { zufluss: 0, abfluss: 0 });
+  state.einnahmen.forEach(e => {
+    if (kontoFlow[e.zielkonto]) kontoFlow[e.zielkonto].zufluss += monatlich(e);
+  });
+  state.positionen.forEach(p => {
+    if (kontoFlow[p.quellkonto]) kontoFlow[p.quellkonto].abfluss += monatlich(p);
+    if (p.zielkonto && kontoFlow[p.zielkonto]) kontoFlow[p.zielkonto].zufluss += monatlich(p);
+  });
+  state.versicherungen.forEach(v => {
+    if (kontoFlow[v.quellkonto]) kontoFlow[v.quellkonto].abfluss += monatlich(v);
+  });
+
+  return {
+    sumE, sumA, saldo, sumByCat, versSchutz, versSparen,
+    laufendSum, versSum,
+    vorsorgeSum: versSum + sumByCat.Kredit + sumByCat.Sparen + sumByCat.Rücklage,
+    kontoFlow,
+  };
+}
+
+// ─────────────  FORMAT  ─────────────
+const fmtEur = n => n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+const fmtSigned = n => (n >= 0 ? '+ ' : '– ') + Math.abs(n).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const freqLabel = pj => {
+  const f = FREQUENZEN.find(x => x[0] == pj);
+  return f ? f[1] : pj + 'x/Jahr';
+};
+
+// ─────────────  RENDER  ─────────────
+function render() {
+  const c = compute();
+
+  // Hero
+  const saldoVal = document.getElementById('saldo-value');
+  const saldoDisplay = document.getElementById('saldo-display');
+  const tagline = document.getElementById('saldo-tagline');
+  saldoVal.textContent = fmtSigned(c.saldo);
+  saldoDisplay.classList.toggle('negative', c.saldo < 0);
+  tagline.textContent = c.saldo >= 0 ? '— bleibt übrig —' : '— fehlt am Ende —';
+
+  document.getElementById('stat-einnahmen').textContent = fmtEur(c.sumE);
+  document.getElementById('stat-ausgaben').textContent = fmtEur(c.sumA);
+  document.getElementById('stat-sparen').textContent = fmtEur(c.sumByCat.Sparen + c.sumByCat.Kredit);
+
+  // Breakdown — Chart + Legend
+  renderBreakdown(c);
+
+  // Counts
+  document.getElementById('cnt-einnahmen').textContent = state.einnahmen.length;
+  document.getElementById('cnt-positionen').textContent = state.positionen.length;
+  document.getElementById('cnt-versicherungen').textContent = state.versicherungen.length;
+
+  // Tables
+  populateFilterDropdowns();
+  renderEinnahmen();
+  renderPositionen();
+  renderVersicherungen();
+  renderKonten(c.kontoFlow);
+}
+
+// ─────────────  CHART + LEGEND  ─────────────
+const BREAKDOWN_GROUPS = [
+  { key: 'Lebenshaltung',  label: 'Lebenshaltung',          color: '#e8a78d' },
+  { key: 'Wohnen',         label: 'Wohnen & Verbrauch',     color: '#7ba6c9' },
+  { key: 'Mobilität',      label: 'Mobilität',              color: '#92b876' },
+  { key: 'Kinder',         label: 'Kinder & Familie',       color: '#d093b3' },
+  { key: 'Sonstiges',      label: 'Sonstiges',              color: '#a8a29e' },
+  { key: 'Vers-Schutz',    label: 'Versicherungen (Schutz)', color: '#9b7fb8' },
+  { key: 'Vers-Sparen',    label: 'Versicherungen (Kapital)', color: '#7a92c7' },
+  { key: 'Kredit',         label: 'Kredite & Tilgung',       color: '#c97a7a' },
+  { key: 'Sparen',         label: 'ETF-Sparpläne',           color: '#6ba87a' },
+  { key: 'Rücklage',       label: 'Rücklagen (Urlaub, Puffer)', color: '#d4ab4a' },
+];
+let expenseChart = null;
+let legendDimmed = new Set();
+
+function renderBreakdown(c) {
+  const valuesByKey = {
+    Lebenshaltung: c.sumByCat.Lebenshaltung,
+    Wohnen:        c.sumByCat.Wohnen,
+    Mobilität:     c.sumByCat.Mobilität,
+    Kinder:        c.sumByCat.Kinder,
+    Sonstiges:     c.sumByCat.Sonstiges,
+    'Vers-Schutz': c.versSchutz,
+    'Vers-Sparen': c.versSparen,
+    Kredit:        c.sumByCat.Kredit,
+    Sparen:        c.sumByCat.Sparen,
+    Rücklage:      c.sumByCat.Rücklage,
+  };
+  const total = BREAKDOWN_GROUPS.reduce((s, g) => s + (valuesByKey[g.key] || 0), 0);
+
+  // Center
+  document.getElementById('chart-total').textContent = fmtEur(total);
+
+  // Legend
+  const legendEl = document.getElementById('expense-legend');
+  legendEl.innerHTML = BREAKDOWN_GROUPS.map(g => {
+    const v = valuesByKey[g.key] || 0;
+    const pct = total > 0 ? (v / total * 100) : 0;
+    const dim = legendDimmed.has(g.key);
+    return `<div class="legend-row ${dim ? 'dim' : ''}" data-group="${g.key}">
+      <span class="legend-swatch" style="background: ${g.color}"></span>
+      <span class="legend-label">${g.label}</span>
+      <span class="legend-value">${fmtEur(v)}</span>
+      <span class="legend-pct">${pct.toFixed(1)} %</span>
+    </div>`;
+  }).join('') + `<div class="legend-row total">
+      <span></span>
+      <span class="legend-label">Σ Ausgaben gesamt</span>
+      <span class="legend-value">${fmtEur(total)}</span>
+      <span class="legend-pct">100 %</span>
+    </div>`;
+
+  // Chart
+  const visibleGroups = BREAKDOWN_GROUPS.filter(g => !legendDimmed.has(g.key));
+  const data = {
+    labels: visibleGroups.map(g => g.label),
+    datasets: [{
+      data: visibleGroups.map(g => valuesByKey[g.key] || 0),
+      backgroundColor: visibleGroups.map(g => g.color),
+      borderColor: '#faf7f2',
+      borderWidth: 2,
+      hoverOffset: 6,
+    }],
+  };
+  const opts = {
+    responsive: true,
+    maintainAspectRatio: true,
+    cutout: '68%',
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(26,26,26,0.95)',
+        titleFont: { family: 'Manrope', weight: '600' },
+        bodyFont: { family: 'JetBrains Mono', size: 12 },
+        padding: 10,
+        boxPadding: 5,
+        callbacks: {
+          label: (ctx) => {
+            const v = ctx.parsed;
+            const pct = total > 0 ? (v / total * 100) : 0;
+            return ` ${fmtEur(v)} · ${pct.toFixed(1)} %`;
+          },
+        },
+      },
+    },
+    animation: { duration: 400 },
+    onClick: (evt, elements) => {
+      if (!elements || elements.length === 0) return;
+      const idx = elements[0].index;
+      const visible = BREAKDOWN_GROUPS.filter(g => !legendDimmed.has(g.key));
+      const clicked = visible[idx];
+      if (clicked) navigateToCategory(clicked.key);
+    },
+    onHover: (evt, elements) => {
+      if (evt && evt.native && evt.native.target) {
+        evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+      }
+    },
+  };
+
+  const canvas = document.getElementById('expense-chart');
+  if (!canvas || typeof Chart === 'undefined') return;
+  if (expenseChart) {
+    expenseChart.data = data;
+    expenseChart.options = opts;
+    expenseChart.update();
+  } else {
+    expenseChart = new Chart(canvas, { type: 'doughnut', data, options: opts });
+  }
+}
+
+function navigateToCategory(key) {
+  // Map donut group keys to (tab, filter)
+  if (key === 'Vers-Schutz' || key === 'Vers-Sparen') {
+    activeTab = 'versicherungen';
+    tableState.versicherungen.filters = { kapitalbildend: key === 'Vers-Sparen' ? 'kapital' : 'schutz' };
+    searchQueries.versicherungen = '';
+  } else {
+    activeTab = 'positionen';
+    tableState.positionen.filters = { kategorie: key };
+    searchQueries.positionen = '';
+  }
+  // Activate tab
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === activeTab));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.dataset.content === activeTab));
+  // Clear search inputs visually
+  ['einnahmen', 'positionen', 'versicherungen'].forEach(t => {
+    const inp = document.getElementById('search-' + t);
+    if (inp && t === activeTab) inp.value = '';
+  });
+  // Re-render to push filter values into the dropdowns and rebuild the table
+  render();
+  // Smooth-scroll to the table
+  setTimeout(() => {
+    const target = document.querySelector(`.tab-content[data-content="${activeTab}"]`);
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 50);
+}
+
+function applyTableState(items, tableName, sortValueFn) {
+  const ts = tableState[tableName];
+  let result = items.slice();
+  // Column filters
+  Object.entries(ts.filters).forEach(([col, val]) => {
+    if (!val) return;
+    const v = String(val).toLowerCase();
+    result = result.filter(item => {
+      let cell;
+      if (col === 'vnvp') cell = (item.vn || '') + ' ' + (item.vp || '');
+      else if (col === 'kapitalbildend') cell = item.kapitalbildend ? 'kapital' : 'schutz';
+      else if (col === 'proJahr') cell = String(item.proJahr);
+      else cell = item[col];
+      cell = String(cell ?? '').toLowerCase();
+      // exact match for selects
+      if (col === 'kategorie' || col === 'zielkonto' || col === 'quellkonto' || col === 'konto' || col === 'versicherer' || col === 'kapitalbildend' || col === 'proJahr') {
+        return cell === v;
+      }
+      // substring for text inputs
+      return cell.includes(v);
+    });
+  });
+  // Sort
+  if (ts.sortBy) {
+    const dir = ts.sortDir === 'desc' ? -1 : 1;
+    result.sort((a, b) => {
+      let av, bv;
+      if (ts.sortBy === 'monatlich') { av = sortValueFn(a); bv = sortValueFn(b); }
+      else if (ts.sortBy === 'kapitalbildend') { av = a.kapitalbildend ? 1 : 0; bv = b.kapitalbildend ? 1 : 0; }
+      else { av = a[ts.sortBy]; bv = b[ts.sortBy]; }
+      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+      return String(av || '').localeCompare(String(bv || ''), 'de', { sensitivity: 'base' }) * dir;
+    });
+  }
+  return result;
+}
+
+function updateSortIndicators(tableName) {
+  const ts = tableState[tableName];
+  document.querySelectorAll(`[data-sort-table="${tableName}"]`).forEach(th => {
+    const isActive = th.dataset.sortKey === ts.sortBy;
+    th.classList.toggle('sorted', isActive);
+    const ind = th.querySelector('.sort-ind');
+    if (ind) ind.textContent = isActive ? (ts.sortDir === 'desc' ? '▼' : '▲') : '↕';
+  });
+}
+
+function updateFilterClear(tableName) {
+  const el = document.getElementById('filter-clear-' + tableName);
+  if (!el) return;
+  const ts = tableState[tableName];
+  const hasFilter = Object.values(ts.filters).some(v => v);
+  el.classList.toggle('hidden', !hasFilter);
+}
+
+function updateTableFooter(tableName, items) {
+  const countEl = document.getElementById('tf-count-' + tableName);
+  const sumEl = document.getElementById('tf-sum-' + tableName);
+  if (!countEl || !sumEl) return;
+  const sum = items.reduce((s, it) => s + monatlich(it), 0);
+  countEl.textContent = items.length;
+  sumEl.textContent = fmtEur(sum);
+}
+
+function renderEinnahmen() {
+  const tbody = document.querySelector('#table-einnahmen tbody');
+  const q = searchQueries.einnahmen.toLowerCase();
+  let items = state.einnahmen.filter(e =>
+    !q || e.bezeichnung.toLowerCase().includes(q) || (e.kommentar || '').toLowerCase().includes(q)
+  );
+  items = applyTableState(items, 'einnahmen', monatlich);
+  updateSortIndicators('einnahmen');
+  updateFilterClear('einnahmen');
+  updateTableFooter('einnahmen', items);
+  if (items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Keine Einnahmen für diese Filter.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = items.map(e => `
+    <tr class="${e.aktiv ? '' : 'inactive'}" data-id="${e.id}">
+      <td class="col-checkbox"><span class="checkbox ${e.aktiv ? 'checked' : ''}" data-toggle="einnahmen" data-id="${e.id}"></span></td>
+      <td>${escapeHtml(e.bezeichnung)}</td>
+      <td class="col-num">${fmtEur(e.betrag)}</td>
+      <td>${freqLabel(e.proJahr)}</td>
+      <td class="col-num"><strong>${fmtEur(monatlich(e))}</strong></td>
+      <td style="color: var(--ink-muted); font-size: 0.85rem;">${escapeHtml(e.kommentar || '')}</td>
+      <td class="col-actions">
+        <button class="btn-ghost" data-edit="einnahmen" data-id="${e.id}" title="Bearbeiten">✏️</button>
+        <button class="btn-ghost btn-danger" data-delete="einnahmen" data-id="${e.id}" title="Löschen">🗑️</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderPositionen() {
+  const tbody = document.querySelector('#table-positionen tbody');
+  const q = searchQueries.positionen.toLowerCase();
+  let items = state.positionen.filter(p => {
+    if (q && !p.bezeichnung.toLowerCase().includes(q) && !(p.kommentar || '').toLowerCase().includes(q) && !(p.zielkonto || '').toLowerCase().includes(q) && !(p.quellkonto || '').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  items = applyTableState(items, 'positionen', monatlich);
+  updateSortIndicators('positionen');
+  updateFilterClear('positionen');
+  updateTableFooter('positionen', items);
+  if (items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Keine Positionen für diese Filter.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = items.map(p => `
+    <tr class="${p.aktiv ? '' : 'inactive'}" data-id="${p.id}">
+      <td class="col-checkbox"><span class="checkbox ${p.aktiv ? 'checked' : ''}" data-toggle="positionen" data-id="${p.id}"></span></td>
+      <td>
+        <div>${escapeHtml(p.bezeichnung)}</div>
+        ${p.kommentar ? `<div style="font-size: 0.75rem; color: var(--ink-soft); margin-top: 0.15rem; font-style: italic;">${escapeHtml(p.kommentar)}</div>` : ''}
+      </td>
+      <td><span class="cat-badge cat-${p.kategorie}">${p.kategorie}</span></td>
+      <td style="font-size: 0.85rem; color: var(--ink-muted);">${p.zielkonto ? escapeHtml(p.zielkonto) : '<span style="color: var(--ink-soft); font-style: italic;">— extern —</span>'}</td>
+      <td class="col-num">${fmtEur(p.betrag)}</td>
+      <td>${freqLabel(p.proJahr)}</td>
+      <td class="col-num"><strong>${fmtEur(monatlich(p))}</strong></td>
+      <td class="col-actions">
+        <button class="btn-ghost" data-edit="positionen" data-id="${p.id}" title="Bearbeiten">✏️</button>
+        <button class="btn-ghost btn-danger" data-delete="positionen" data-id="${p.id}" title="Löschen">🗑️</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderVersicherungen() {
+  const tbody = document.querySelector('#table-versicherungen tbody');
+  const q = searchQueries.versicherungen.toLowerCase();
+  let items = state.versicherungen.filter(v => {
+    if (q && !v.bezeichnung.toLowerCase().includes(q) && !v.versicherer.toLowerCase().includes(q) && !(v.vertragsnummer || '').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  items = applyTableState(items, 'versicherungen', monatlich);
+  updateSortIndicators('versicherungen');
+  updateFilterClear('versicherungen');
+  updateTableFooter('versicherungen', items);
+  if (items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-state">Keine Verträge für diese Filter.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = items.map(v => `
+    <tr class="${v.aktiv ? '' : 'inactive'}" data-id="${v.id}">
+      <td class="col-checkbox"><span class="checkbox ${v.aktiv ? 'checked' : ''}" data-toggle="versicherungen" data-id="${v.id}"></span></td>
+      <td><strong>${escapeHtml(v.versicherer)}</strong></td>
+      <td>
+        <div>${escapeHtml(v.bezeichnung)}</div>
+        ${v.vertragsnummer ? `<div class="mono" style="font-size: 0.7rem; color: var(--ink-soft); margin-top: 0.15rem;">${escapeHtml(v.vertragsnummer)}</div>` : ''}
+        ${v.kommentar ? `<div style="font-size: 0.75rem; color: var(--ink-soft); margin-top: 0.15rem; font-style: italic;">${escapeHtml(v.kommentar)}</div>` : ''}
+      </td>
+      <td style="font-size: 0.8rem; color: var(--ink-muted);">${escapeHtml(v.vn)} → ${escapeHtml(v.vp || '—')}</td>
+      <td>${v.kapitalbildend ? '<span class="kapb-badge">kapitalbildend</span>' : '<span style="color: var(--ink-muted); font-size: 0.8rem;">Schutz</span>'}</td>
+      <td class="col-num">${fmtEur(v.betrag)}</td>
+      <td>${freqLabel(v.proJahr)}</td>
+      <td class="col-num"><strong>${fmtEur(monatlich(v))}</strong></td>
+      <td class="col-actions">
+        <button class="btn-ghost" data-edit="versicherungen" data-id="${v.id}" title="Bearbeiten">✏️</button>
+        <button class="btn-ghost btn-danger" data-delete="versicherungen" data-id="${v.id}" title="Löschen">🗑️</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderKonten(kontoFlow) {
+  const tbody = document.querySelector('#table-konten tbody');
+  const hints = {
+    'ING DiBa Giro':                              { owner: 'gemeinsam', hint: 'Hauptkonto – alle Einnahmen rein, alle Ausgaben raus' },
+    'bunq Lebenshaltungskonto':                   { owner: 'gemeinsam', hint: 'Pauschale für tägliche Ausgaben' },
+    'bunq Urlaubskonto':                          { owner: 'gemeinsam', hint: 'Urlaubsrücklage' },
+    'bunq Sparkonto':                             { owner: 'gemeinsam', hint: 'Monatsausgaben-Puffer' },
+    'Scalable Capital (grow grow grow)':          { owner: 'gemeinsam', hint: 'ETF-Sparplan (Maria + Martin)' },
+    'Scalable Capital (Rente)':                   { owner: 'gemeinsam', hint: 'Altersvorsorge (Maria + Martin)' },
+    'ING DiBa Depot Eltern':                      { owner: 'gemeinsam', hint: 'Sparplan zur Kreditablösung' },
+    'TradeRepublic Martin':                       { owner: 'Martin',    hint: 'ETF-Sparplan (wöchentlich)' },
+    'TradeRepublic Maria':                        { owner: 'Maria',     hint: 'ETF-Sparplan (statt Riester)' },
+    'Scalable Capital Lina':                      { owner: 'Lina',      hint: 'ETF-Sparplan' },
+    'ING DiBa Depot Lina':                        { owner: 'Lina',      hint: 'Sparplan' },
+    'Scalable Capital Pippa':                     { owner: 'Pippa',     hint: 'ETF-Sparplan' },
+    'ING DiBa Depot Pippa':                       { owner: 'Pippa',     hint: 'Sparplan' },
+  };
+  const dash = '<span style="color: var(--ink-soft);">—</span>';
+  tbody.innerHTML = getKonten().map(k => {
+    const meta = hints[k] || { owner: '', hint: '' };
+    const f = kontoFlow[k] || { zufluss: 0, abfluss: 0 };
+    const netto = f.zufluss - f.abfluss;
+    const nettoColor = netto > 0.01 ? 'var(--accent)' : (netto < -0.01 ? 'var(--warning)' : 'var(--ink-muted)');
+    return `<tr>
+      <td><strong>${k}</strong></td>
+      <td><span style="font-size: 0.75rem; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.08em;">${meta.owner}</span></td>
+      <td class="col-num" style="color: var(--accent);">${f.zufluss > 0 ? '+ ' + fmtEur(f.zufluss) : dash}</td>
+      <td class="col-num" style="color: var(--warning);">${f.abfluss > 0 ? '– ' + fmtEur(f.abfluss) : dash}</td>
+      <td class="col-num" style="color: ${nettoColor}; font-weight: 600;">${Math.abs(netto) < 0.01 ? dash : (netto >= 0 ? '+ ' : '– ') + fmtEur(Math.abs(netto))}</td>
+      <td style="color: var(--ink-muted); font-size: 0.85rem;">${meta.hint}</td>
+    </tr>`;
+  }).join('');
+}
+
+function populateFilterDropdowns() {
+  const fillSelect = (selector, values, currentVal) => {
+    const sel = document.querySelector(selector);
+    if (!sel) return;
+    const cur = currentVal != null ? currentVal : sel.value;
+    sel.innerHTML = '<option value="">alle</option>' + values.map(v =>
+      `<option value="${escapeHtml(v)}" ${String(cur) === String(v) ? 'selected' : ''}>${escapeHtml(v)}</option>`
+    ).join('');
+  };
+  // Positionen — Kategorie + Zielkonto from KATEGORIEN/getKonten()
+  fillSelect('select[data-filter-table="positionen"][data-filter-col="kategorie"]', KATEGORIEN, tableState.positionen.filters.kategorie);
+  fillSelect('select[data-filter-table="positionen"][data-filter-col="zielkonto"]', getKonten(), tableState.positionen.filters.zielkonto);
+  // Versicherungen — Versicherer (uniq from data)
+  const versicherer = [...new Set(state.versicherungen.map(v => v.versicherer).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'de'));
+  fillSelect('select[data-filter-table="versicherungen"][data-filter-col="versicherer"]', versicherer, tableState.versicherungen.filters.versicherer);
+  // Restore other selects
+  ['einnahmen', 'positionen', 'versicherungen'].forEach(tn => {
+    Object.entries(tableState[tn].filters).forEach(([col, val]) => {
+      const sel = document.querySelector(`select[data-filter-table="${tn}"][data-filter-col="${col}"]`);
+      const inp = document.querySelector(`input[data-filter-table="${tn}"][data-filter-col="${col}"]`);
+      if (sel && sel.value !== String(val ?? '')) sel.value = val ?? '';
+      if (inp && inp.value !== String(val ?? '')) inp.value = val ?? '';
+    });
+  });
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+// ─────────────  MODAL  ─────────────
+const modal = document.getElementById('modal');
+const modalForm = document.getElementById('modal-form');
+const modalTitle = document.getElementById('modal-title');
+const modalSub = document.getElementById('modal-sub');
+const modalBody = document.getElementById('modal-body');
+let modalContext = null;
+
+const NEW_KONTO = '__NEW__';
+function kontoOptions(includeExtern) {
+  const list = getKonten().map(k => [k, k]);
+  if (includeExtern) list.unshift(['', '— extern —']);
+  list.push([NEW_KONTO, '+ Neues Konto…']);
+  return list;
+}
+function getFieldConfigs() {
+  return {
+    einnahme: {
+      title: 'Einnahme',
+      fields: [
+        { name: 'aktiv', label: 'Aktiv (zählt im Cashflow)', type: 'checkbox', default: true },
+        { name: 'bezeichnung', label: 'Bezeichnung', type: 'text', required: true, placeholder: 'z.B. Gehalt' },
+        { name: 'zielkonto', label: 'Zielkonto (wo geht das Geld hin)', type: 'select', options: kontoOptions(false), default: GIRO },
+        { name: 'betrag', label: 'Betrag (€)', type: 'number', step: '0.01', required: true, paired: true },
+        { name: 'proJahr', label: 'Frequenz (pro Jahr)', type: 'select', options: FREQUENZEN, default: 12, paired: true },
+        { name: 'kommentar', label: 'Kommentar', type: 'text', placeholder: 'optional' },
+      ],
+    },
+    position: {
+      title: 'Position',
+      fields: [
+        { name: 'aktiv', label: 'Aktiv (zählt im Cashflow)', type: 'checkbox', default: true },
+        { name: 'bezeichnung', label: 'Bezeichnung', type: 'text', required: true },
+        { name: 'kategorie', label: 'Kategorie', type: 'select', options: KATEGORIEN.map(k => [k, k]), default: KATEGORIEN[0] },
+        { name: 'quellkonto', label: 'Quellkonto (wo wird abgebucht)', type: 'select', options: kontoOptions(false), default: GIRO, paired: true },
+        { name: 'zielkonto', label: 'Zielkonto (wohin fließt es — leer = extern)', type: 'select', options: kontoOptions(true), default: '', paired: true },
+        { name: 'betrag', label: 'Betrag (€)', type: 'number', step: '0.01', required: true, paired: true },
+        { name: 'proJahr', label: 'Frequenz', type: 'select', options: FREQUENZEN, default: 12, paired: true },
+        { name: 'kommentar', label: 'Kommentar', type: 'text', placeholder: 'optional' },
+      ],
+    },
+    versicherung: {
+      title: 'Versicherung',
+      fields: [
+        { name: 'aktiv', label: 'Aktiv (zählt im Cashflow)', type: 'checkbox', default: true },
+        { name: 'versicherer', label: 'Versicherer', type: 'text', required: true, paired: true, placeholder: 'z.B. Allianz' },
+        { name: 'bezeichnung', label: 'Bezeichnung', type: 'text', required: true, paired: true },
+        { name: 'vertragsnummer', label: 'Vertragsnummer', type: 'text', paired: true },
+        { name: 'kapitalbildend', label: 'Kapitalbildend (= Sparcharakter)', type: 'checkbox', default: false, paired: true },
+        { name: 'vn', label: 'Versicherungsnehmer', type: 'text', paired: true, placeholder: 'Martin/Maria' },
+        { name: 'vp', label: 'Versicherte Person', type: 'text', paired: true },
+        { name: 'quellkonto', label: 'Quellkonto', type: 'select', options: kontoOptions(false), default: GIRO, paired: true },
+        { name: 'betrag', label: 'Beitrag (€)', type: 'number', step: '0.01', required: true, paired: true },
+        { name: 'proJahr', label: 'Frequenz', type: 'select', options: FREQUENZEN, default: 12, paired: true },
+        { name: 'kommentar', label: 'Kommentar', type: 'text', placeholder: 'optional' },
+      ],
+    },
+  };
+}
+
+const COLLECTION_MAP = {
+  einnahme: { collection: 'einnahmen', config: 'einnahme', idPrefix: 'e' },
+  position: { collection: 'positionen', config: 'position', idPrefix: 'p' },
+  versicherung: { collection: 'versicherungen', config: 'versicherung', idPrefix: 'v' },
+};
+
+function openModal(type, item = null) {
+  // Direct collection lookup
+  let cfg, collection, idPrefix;
+  if (COLLECTION_MAP[type]) {
+    const m = COLLECTION_MAP[type];
+    collection = m.collection;
+    idPrefix = m.idPrefix;
+    cfg = getFieldConfigs()[m.config];
+  } else {
+    // type is collection name (einnahmen, positionen, versicherungen)
+    const reverse = Object.entries(COLLECTION_MAP).find(([k, v]) => v.collection === type);
+    if (!reverse) return;
+    collection = type;
+    idPrefix = reverse[1].idPrefix;
+    cfg = getFieldConfigs()[reverse[0]];
+  }
+
+  modalContext = { collection, idPrefix, item };
+  modalTitle.textContent = (item ? 'Bearbeiten: ' : 'Neu: ') + cfg.title;
+  modalSub.textContent = item ? '' : 'Trag ein, was du regelmäßig zahlst oder bekommst.';
+
+  // Build fields, grouping paired fields side-by-side
+  let html = '';
+  let i = 0;
+  while (i < cfg.fields.length) {
+    const f = cfg.fields[i];
+    const next = cfg.fields[i + 1];
+    if (f.paired && next && next.paired) {
+      html += `<div class="field-row">${renderField(f, item)}${renderField(next, item)}</div>`;
+      i += 2;
+    } else {
+      html += renderField(f, item);
+      i += 1;
+    }
+  }
+  modalBody.innerHTML = html;
+  // Wire up "+ Neues Konto…" for konto selects
+  modalBody.querySelectorAll('select[name="quellkonto"], select[name="zielkonto"]').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      if (e.target.value !== NEW_KONTO) return;
+      const name = prompt('Name des neuen Kontos:');
+      if (!name || !name.trim()) {
+        e.target.value = '';
+        return;
+      }
+      const clean = name.trim();
+      if (!state.konten) state.konten = KONTEN_DEFAULT.slice();
+      if (!state.konten.includes(clean)) {
+        pushHistory();
+        state.konten.push(clean);
+        saveState();
+      }
+      // Re-render all konto selects in the modal so the new entry appears everywhere
+      const includeExtern = e.target.name === 'zielkonto';
+      const rebuild = (selectEl) => {
+        const currentVal = selectEl === e.target ? clean : selectEl.value;
+        const inclExt = selectEl.name === 'zielkonto';
+        selectEl.innerHTML = kontoOptions(inclExt).map(([v, l]) =>
+          `<option value="${escapeHtml(v)}" ${String(currentVal) === String(v) ? 'selected' : ''}>${escapeHtml(l)}</option>`
+        ).join('');
+      };
+      modalBody.querySelectorAll('select[name="quellkonto"], select[name="zielkonto"]').forEach(rebuild);
+      showToast('Konto angelegt: ' + clean);
+    });
+  });
+  modal.showModal();
+  setTimeout(() => {
+    const firstInput = modalBody.querySelector('input:not([type=checkbox]), select');
+    if (firstInput) firstInput.focus();
+  }, 50);
+}
+
+function renderField(f, item) {
+  const val = item ? item[f.name] : (f.default !== undefined ? f.default : '');
+  if (f.type === 'checkbox') {
+    return `<div class="field"><div class="field-checkbox">
+      <input type="checkbox" id="f_${f.name}" name="${f.name}" ${val ? 'checked' : ''}>
+      <label for="f_${f.name}">${f.label}</label>
+    </div></div>`;
+  }
+  if (f.type === 'select') {
+    const opts = f.options.map(o => {
+      const [v, l] = Array.isArray(o) ? o : [o, o];
+      return `<option value="${escapeHtml(v)}" ${String(val) == String(v) ? 'selected' : ''}>${escapeHtml(l)}</option>`;
+    }).join('');
+    return `<div class="field"><label for="f_${f.name}">${f.label}</label>
+      <select id="f_${f.name}" name="${f.name}">${opts}</select></div>`;
+  }
+  const isNum = f.type === 'number';
+  return `<div class="field"><label for="f_${f.name}">${f.label}</label>
+    <input id="f_${f.name}" name="${f.name}" type="${f.type}" ${f.step ? `step="${f.step}"` : ''} ${f.required ? 'required' : ''}
+      ${f.placeholder ? `placeholder="${f.placeholder}"` : ''}
+      class="${isNum ? 'mono' : ''}"
+      value="${escapeHtml(val ?? '')}"></div>`;
+}
+
+modalForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (!modalContext) return;
+  const fd = new FormData(modalForm);
+  const obj = {};
+  // Get all fields from modalBody
+  const inputs = modalBody.querySelectorAll('input, select');
+  inputs.forEach(inp => {
+    if (inp.type === 'checkbox') {
+      obj[inp.name] = inp.checked;
+    } else if (inp.type === 'number') {
+      obj[inp.name] = parseFloat(inp.value) || 0;
+    } else if (inp.tagName === 'SELECT' && (inp.name === 'proJahr')) {
+      obj[inp.name] = parseInt(inp.value, 10);
+    } else {
+      obj[inp.name] = inp.value.trim();
+    }
+  });
+
+  const { collection, idPrefix, item } = modalContext;
+  pushHistory();
+  if (item) {
+    Object.assign(item, obj);
+  } else {
+    obj.id = newId(idPrefix);
+    state[collection].push(obj);
+  }
+  saveState();
+  render();
+  modal.close();
+  showToast(item ? 'Aktualisiert' : 'Hinzugefügt');
+});
+
+document.querySelectorAll('[data-close]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.closest('dialog').close();
+  });
+});
+
+// ─────────────  CONFIRM DELETE  ─────────────
+const confirmModal = document.getElementById('confirm-modal');
+const confirmText = document.getElementById('confirm-text');
+const confirmYes = document.getElementById('confirm-yes');
+let pendingDelete = null;
+
+function askDelete(collection, id) {
+  const item = state[collection].find(x => x.id === id);
+  if (!item) return;
+  pendingDelete = { collection, id };
+  confirmText.textContent = `„${item.bezeichnung || (item.versicherer + ' — ' + item.bezeichnung)}“ wird endgültig entfernt.`;
+  confirmModal.showModal();
+}
+
+confirmYes.addEventListener('click', () => {
+  if (!pendingDelete) return;
+  pushHistory();
+  state[pendingDelete.collection] = state[pendingDelete.collection].filter(x => x.id !== pendingDelete.id);
+  saveState();
+  render();
+  confirmModal.close();
+  showToast('Gelöscht');
+  pendingDelete = null;
+});
+
+// ─────────────  EVENT DELEGATION  ─────────────
+document.body.addEventListener('click', (e) => {
+  const t = e.target;
+
+  // Tab switching
+  if (t.classList.contains('tab-btn')) {
+    activeTab = t.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === activeTab));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.dataset.content === activeTab));
+    return;
+  }
+
+  // Toggle aktiv
+  if (t.dataset.toggle) {
+    const item = state[t.dataset.toggle].find(x => x.id === t.dataset.id);
+    if (item) {
+      pushHistory();
+      item.aktiv = !item.aktiv;
+      saveState();
+      render();
+    }
+    return;
+  }
+
+  // Add
+  if (t.dataset.add) {
+    openModal(t.dataset.add);
+    return;
+  }
+
+  // Edit
+  if (t.dataset.edit) {
+    const item = state[t.dataset.edit].find(x => x.id === t.dataset.id);
+    if (item) openModal(t.dataset.edit, item);
+    return;
+  }
+
+  // Delete
+  if (t.dataset.delete) {
+    askDelete(t.dataset.delete, t.dataset.id);
+    return;
+  }
+
+  // Sortable header
+  const sortTh = t.closest('[data-sort-table]');
+  if (sortTh) {
+    const tn = sortTh.dataset.sortTable;
+    const key = sortTh.dataset.sortKey;
+    const ts = tableState[tn];
+    if (ts.sortBy === key) {
+      ts.sortDir = ts.sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      ts.sortBy = key;
+      ts.sortDir = 'asc';
+    }
+    if (tn === 'einnahmen') renderEinnahmen();
+    else if (tn === 'positionen') renderPositionen();
+    else if (tn === 'versicherungen') renderVersicherungen();
+    return;
+  }
+
+  // Clear filters
+  if (t.dataset.clearFilters) {
+    const tn = t.dataset.clearFilters;
+    tableState[tn].filters = {};
+    document.querySelectorAll(`[data-filter-table="${tn}"]`).forEach(el => { el.value = ''; });
+    if (tn === 'einnahmen') renderEinnahmen();
+    else if (tn === 'positionen') renderPositionen();
+    else if (tn === 'versicherungen') renderVersicherungen();
+    return;
+  }
+
+  // Legend toggle (chart slice show/hide)
+  const legendRow = t.closest('.legend-row');
+  if (legendRow && legendRow.dataset.group) {
+    const g = legendRow.dataset.group;
+    if (legendDimmed.has(g)) legendDimmed.delete(g);
+    else legendDimmed.add(g);
+    render();
+    return;
+  }
+});
+
+// Filter inputs/selects
+document.body.addEventListener('input', (e) => {
+  const t = e.target;
+  if (t.dataset && t.dataset.filterTable) {
+    const tn = t.dataset.filterTable;
+    const col = t.dataset.filterCol;
+    tableState[tn].filters[col] = t.value;
+    if (tn === 'einnahmen') renderEinnahmen();
+    else if (tn === 'positionen') renderPositionen();
+    else if (tn === 'versicherungen') renderVersicherungen();
+  }
+});
+document.body.addEventListener('change', (e) => {
+  const t = e.target;
+  if (t.dataset && t.dataset.filterTable && t.tagName === 'SELECT') {
+    const tn = t.dataset.filterTable;
+    const col = t.dataset.filterCol;
+    tableState[tn].filters[col] = t.value;
+    if (tn === 'einnahmen') renderEinnahmen();
+    else if (tn === 'positionen') renderPositionen();
+    else if (tn === 'versicherungen') renderVersicherungen();
+  }
+});
+
+// Search inputs
+['einnahmen', 'positionen', 'versicherungen'].forEach(name => {
+  const inp = document.getElementById('search-' + name);
+  if (!inp) return;
+  inp.addEventListener('input', () => {
+    searchQueries[name] = inp.value;
+    if (name === 'einnahmen') renderEinnahmen();
+    else if (name === 'positionen') renderPositionen();
+    else if (name === 'versicherungen') renderVersicherungen();
+  });
+});
+
+// ─────────────  EXCEL EXPORT (mit Formeln + Styles)  ─────────────
+async function loadSheetJS() {
+  if (window.XLSX) return;
+  await new Promise((res, rej) => {
+    const s = document.createElement('script');
+    // xlsx-js-style: SheetJS CE fork with full cell style support
+    s.src = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';
+    s.onload = res;
+    s.onerror = () => rej(new Error('SheetJS konnte nicht geladen werden — Internet-Verbindung?'));
+    document.head.appendChild(s);
+  });
+}
+
+// Style palette — matches app design (Fraunces gold + dark ink + beige bg)
+const XSTYLE = {
+  title:     { font: { bold: true, sz: 20, color: { rgb: 'B8893B' }, name: 'Georgia' }, alignment: { horizontal: 'left', vertical: 'center' } },
+  subtitle:  { font: { italic: true, sz: 11, color: { rgb: '6B6660' }, name: 'Calibri' }, alignment: { horizontal: 'left', vertical: 'center' } },
+  section:   { font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' }, name: 'Calibri' }, fill: { fgColor: { rgb: '1A1A1A' } }, alignment: { horizontal: 'left', vertical: 'center' } },
+  th:        { font: { bold: true, sz: 10, color: { rgb: 'FFFFFF' }, name: 'Calibri' }, fill: { fgColor: { rgb: '2D5F3F' } }, alignment: { horizontal: 'left', vertical: 'center' }, border: { bottom: { style: 'thin', color: { rgb: '1A1A1A' } } } },
+  thRight:   { font: { bold: true, sz: 10, color: { rgb: 'FFFFFF' }, name: 'Calibri' }, fill: { fgColor: { rgb: '2D5F3F' } }, alignment: { horizontal: 'right', vertical: 'center' }, border: { bottom: { style: 'thin', color: { rgb: '1A1A1A' } } } },
+  cellNum:   { font: { name: 'Calibri', sz: 11 }, alignment: { horizontal: 'right' }, numFmt: '#,##0.00 "€"' },
+  cellText:  { font: { name: 'Calibri', sz: 11 } },
+  cellMuted: { font: { name: 'Calibri', sz: 10, color: { rgb: '6B6660' }, italic: true } },
+  zebra:     { fill: { fgColor: { rgb: 'FAF7F2' } } },
+  total:     { font: { bold: true, name: 'Calibri', sz: 11 }, alignment: { horizontal: 'right' }, numFmt: '#,##0.00 "€"', border: { top: { style: 'medium', color: { rgb: '1A1A1A' } } }, fill: { fgColor: { rgb: 'F3EFE8' } } },
+  totalLbl:  { font: { bold: true, name: 'Calibri', sz: 11 }, border: { top: { style: 'medium', color: { rgb: '1A1A1A' } } }, fill: { fgColor: { rgb: 'F3EFE8' } } },
+  saldoBig:  { font: { bold: true, sz: 24, color: { rgb: '2D5F3F' }, name: 'Georgia' }, alignment: { horizontal: 'right' }, numFmt: '+ #,##0.00 "€";- #,##0.00 "€"' },
+  saldoLbl:  { font: { sz: 10, color: { rgb: '6B6660' }, name: 'Calibri' }, alignment: { horizontal: 'left', vertical: 'center' } },
+  kpi:       { font: { bold: true, sz: 14, name: 'Georgia' }, alignment: { horizontal: 'right' }, numFmt: '#,##0.00 "€"' },
+  kpiLbl:    { font: { sz: 10, color: { rgb: '6B6660' }, name: 'Calibri' }, alignment: { horizontal: 'left', vertical: 'center' } },
+  export:    { font: { italic: true, sz: 9, color: { rgb: 'A8A29E' } } },
+};
+
+function setCell(ws, addr, value, style, opts = {}) {
+  const cell = { v: value, t: opts.type || (typeof value === 'number' ? 'n' : 's'), s: style };
+  if (opts.formula) { cell.f = opts.formula; cell.t = 'n'; delete cell.v; }
+  if (opts.numFmt) { cell.z = opts.numFmt; }
+  ws[addr] = cell;
+}
+
+function applyStyleToRange(ws, rangeStr, style) {
+  const range = XLSX.utils.decode_range(rangeStr);
+  for (let r = range.s.r; r <= range.e.r; r++) {
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const addr = XLSX.utils.encode_cell({ r, c });
+      if (ws[addr]) ws[addr].s = { ...(ws[addr].s || {}), ...style };
+    }
+  }
+}
+
+function styleHeaderRow(ws, colCount, numericCols = []) {
+  for (let c = 0; c < colCount; c++) {
+    const addr = XLSX.utils.encode_cell({ r: 0, c });
+    if (ws[addr]) ws[addr].s = numericCols.includes(c) ? XSTYLE.thRight : XSTYLE.th;
+  }
+  ws['!rows'] = ws['!rows'] || [];
+  ws['!rows'][0] = { hpt: 22 }; // header row height
+}
+
+function styleDataRows(ws, startRow, endRow, colCount, numericCols = [], mutedCols = []) {
+  for (let r = startRow; r <= endRow; r++) {
+    const zebra = (r - startRow) % 2 === 1;
+    for (let c = 0; c < colCount; c++) {
+      const addr = XLSX.utils.encode_cell({ r, c });
+      if (!ws[addr]) continue;
+      let base;
+      if (numericCols.includes(c)) base = { ...XSTYLE.cellNum };
+      else if (mutedCols.includes(c)) base = { ...XSTYLE.cellMuted };
+      else base = { ...XSTYLE.cellText };
+      if (zebra) base = { ...base, fill: { fgColor: { rgb: 'FAF7F2' } } };
+      ws[addr].s = { ...(ws[addr].s || {}), ...base };
+    }
+    ws['!rows'] = ws['!rows'] || [];
+    ws['!rows'][r] = { hpt: 18 };
+  }
+}
+
+async function exportToExcel() {
+  await loadSheetJS();
+  const wb = XLSX.utils.book_new();
+  const today = new Date().toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' });
+
+  // ─── Einnahmen sheet ───
+  const einHeaders = ['Aktiv', 'Bezeichnung', 'Betrag', 'Pro Jahr', 'Monatlich', 'Zielkonto', 'Kommentar'];
+  const einAoA = [einHeaders, ...state.einnahmen.map(e => [
+    e.aktiv ? 'ja' : 'nein', e.bezeichnung, Number(e.betrag) || 0, Number(e.proJahr) || 0,
+    null, e.zielkonto || '', e.kommentar || '',
+  ])];
+  const wsEin = XLSX.utils.aoa_to_sheet(einAoA);
+  for (let i = 0; i < state.einnahmen.length; i++) {
+    const r = i + 2;
+    wsEin[`E${r}`] = { f: `IF(A${r}="ja",C${r}*D${r}/12,0)`, t: 'n', z: '#,##0.00 "€"' };
+    if (wsEin[`C${r}`]) wsEin[`C${r}`].z = '#,##0.00 "€"';
+  }
+  // Total row
+  const einTotalRow = state.einnahmen.length + 2;
+  wsEin[`B${einTotalRow}`] = { v: 'Σ Summe', t: 's' };
+  wsEin[`E${einTotalRow}`] = { f: `SUM(E2:E${einTotalRow - 1})`, t: 'n', z: '#,##0.00 "€"' };
+  wsEin['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: einTotalRow - 1, c: 6 } });
+  styleHeaderRow(wsEin, 7, [2, 3, 4]);
+  styleDataRows(wsEin, 1, state.einnahmen.length, 7, [2, 3, 4], [6]);
+  applyStyleToRange(wsEin, `B${einTotalRow}:B${einTotalRow}`, XSTYLE.totalLbl);
+  applyStyleToRange(wsEin, `E${einTotalRow}:E${einTotalRow}`, XSTYLE.total);
+  wsEin['!cols'] = [{wch: 7}, {wch: 32}, {wch: 12}, {wch: 10}, {wch: 12}, {wch: 22}, {wch: 30}];
+  wsEin['!freeze'] = { xSplit: 0, ySplit: 1 };
+  XLSX.utils.book_append_sheet(wb, wsEin, 'Einnahmen');
+
+  // ─── Ausgaben sheet ───
+  const posHeaders = ['Aktiv', 'Bezeichnung', 'Kategorie', 'Quellkonto', 'Zielkonto', 'Betrag', 'Pro Jahr', 'Monatlich', 'Kommentar'];
+  const posAoA = [posHeaders, ...state.positionen.map(p => [
+    p.aktiv ? 'ja' : 'nein', p.bezeichnung, p.kategorie, p.quellkonto || '', p.zielkonto || '',
+    Number(p.betrag) || 0, Number(p.proJahr) || 0, null, p.kommentar || '',
+  ])];
+  const wsPos = XLSX.utils.aoa_to_sheet(posAoA);
+  for (let i = 0; i < state.positionen.length; i++) {
+    const r = i + 2;
+    wsPos[`H${r}`] = { f: `IF(A${r}="ja",F${r}*G${r}/12,0)`, t: 'n', z: '#,##0.00 "€"' };
+    if (wsPos[`F${r}`]) wsPos[`F${r}`].z = '#,##0.00 "€"';
+  }
+  const posTotalRow = state.positionen.length + 2;
+  wsPos[`B${posTotalRow}`] = { v: 'Σ Summe', t: 's' };
+  wsPos[`H${posTotalRow}`] = { f: `SUM(H2:H${posTotalRow - 1})`, t: 'n', z: '#,##0.00 "€"' };
+  wsPos['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: posTotalRow - 1, c: 8 } });
+  styleHeaderRow(wsPos, 9, [5, 6, 7]);
+  styleDataRows(wsPos, 1, state.positionen.length, 9, [5, 6, 7], [8]);
+  applyStyleToRange(wsPos, `B${posTotalRow}:B${posTotalRow}`, XSTYLE.totalLbl);
+  applyStyleToRange(wsPos, `H${posTotalRow}:H${posTotalRow}`, XSTYLE.total);
+  wsPos['!cols'] = [{wch: 7}, {wch: 42}, {wch: 14}, {wch: 22}, {wch: 30}, {wch: 12}, {wch: 10}, {wch: 12}, {wch: 30}];
+  wsPos['!freeze'] = { xSplit: 0, ySplit: 1 };
+  XLSX.utils.book_append_sheet(wb, wsPos, 'Ausgaben');
+
+  // ─── Versicherungen sheet ───
+  const versHeaders = ['Aktiv', 'Versicherer', 'Bezeichnung', 'Vertragsnummer', 'VN', 'VP', 'Kapitalbildend', 'Quellkonto', 'Beitrag', 'Pro Jahr', 'Monatlich', 'Kommentar'];
+  const versAoA = [versHeaders, ...state.versicherungen.map(v => [
+    v.aktiv ? 'ja' : 'nein', v.versicherer, v.bezeichnung, v.vertragsnummer || '',
+    v.vn || '', v.vp || '', v.kapitalbildend ? 'ja' : 'nein', v.quellkonto || '',
+    Number(v.betrag) || 0, Number(v.proJahr) || 0, null, v.kommentar || '',
+  ])];
+  const wsVers = XLSX.utils.aoa_to_sheet(versAoA);
+  for (let i = 0; i < state.versicherungen.length; i++) {
+    const r = i + 2;
+    wsVers[`K${r}`] = { f: `IF(A${r}="ja",I${r}*J${r}/12,0)`, t: 'n', z: '#,##0.00 "€"' };
+    if (wsVers[`I${r}`]) wsVers[`I${r}`].z = '#,##0.00 "€"';
+  }
+  const versTotalRow = state.versicherungen.length + 2;
+  wsVers[`B${versTotalRow}`] = { v: 'Σ Summe', t: 's' };
+  wsVers[`K${versTotalRow}`] = { f: `SUM(K2:K${versTotalRow - 1})`, t: 'n', z: '#,##0.00 "€"' };
+  wsVers['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: versTotalRow - 1, c: 11 } });
+  styleHeaderRow(wsVers, 12, [8, 9, 10]);
+  styleDataRows(wsVers, 1, state.versicherungen.length, 12, [8, 9, 10], [3, 11]);
+  applyStyleToRange(wsVers, `B${versTotalRow}:B${versTotalRow}`, XSTYLE.totalLbl);
+  applyStyleToRange(wsVers, `K${versTotalRow}:K${versTotalRow}`, XSTYLE.total);
+  wsVers['!cols'] = [{wch: 7}, {wch: 18}, {wch: 40}, {wch: 20}, {wch: 10}, {wch: 18}, {wch: 15}, {wch: 22}, {wch: 12}, {wch: 10}, {wch: 12}, {wch: 30}];
+  wsVers['!freeze'] = { xSplit: 0, ySplit: 1 };
+  XLSX.utils.book_append_sheet(wb, wsVers, 'Versicherungen');
+
+  // ─── Konten sheet ───
+  const konten = getKonten();
+  const kontoAoA = [['Konto', 'Zufluss', 'Abfluss', 'Netto']];
+  konten.forEach((k) => kontoAoA.push([k, null, null, null]));
+  kontoAoA.push(['Σ Summe', null, null, null]);
+  const wsKonto = XLSX.utils.aoa_to_sheet(kontoAoA);
+  konten.forEach((k, i) => {
+    const r = i + 2;
+    wsKonto[`B${r}`] = { f: `SUMIFS(Einnahmen!E:E,Einnahmen!F:F,A${r})+SUMIFS(Ausgaben!H:H,Ausgaben!E:E,A${r})`, t: 'n', z: '#,##0.00 "€"' };
+    wsKonto[`C${r}`] = { f: `SUMIFS(Ausgaben!H:H,Ausgaben!D:D,A${r})+SUMIFS(Versicherungen!K:K,Versicherungen!H:H,A${r})`, t: 'n', z: '#,##0.00 "€"' };
+    wsKonto[`D${r}`] = { f: `B${r}-C${r}`, t: 'n', z: '+ #,##0.00 "€";- #,##0.00 "€";0.00 "€"' };
+  });
+  const kontoTotalRow = konten.length + 2;
+  wsKonto[`B${kontoTotalRow}`] = { f: `SUM(B2:B${kontoTotalRow - 1})`, t: 'n', z: '#,##0.00 "€"' };
+  wsKonto[`C${kontoTotalRow}`] = { f: `SUM(C2:C${kontoTotalRow - 1})`, t: 'n', z: '#,##0.00 "€"' };
+  wsKonto[`D${kontoTotalRow}`] = { f: `SUM(D2:D${kontoTotalRow - 1})`, t: 'n', z: '+ #,##0.00 "€";- #,##0.00 "€";0.00 "€"' };
+  styleHeaderRow(wsKonto, 4, [1, 2, 3]);
+  styleDataRows(wsKonto, 1, konten.length, 4, [1, 2, 3]);
+  applyStyleToRange(wsKonto, `A${kontoTotalRow}:A${kontoTotalRow}`, XSTYLE.totalLbl);
+  applyStyleToRange(wsKonto, `B${kontoTotalRow}:D${kontoTotalRow}`, XSTYLE.total);
+  wsKonto['!cols'] = [{wch: 42}, {wch: 14}, {wch: 14}, {wch: 14}];
+  wsKonto['!freeze'] = { xSplit: 0, ySplit: 1 };
+  XLSX.utils.book_append_sheet(wb, wsKonto, 'Konten');
+
+  // ─── Übersicht (Dashboard) ───
+  const ws = XLSX.utils.aoa_to_sheet([[]]);
+  // Row 1: Title
+  setCell(ws, 'A1', 'Familie Wanitschke — Cashflow', XSTYLE.title);
+  // Row 2: subtitle
+  setCell(ws, 'A2', `Stand: ${today}`, XSTYLE.subtitle);
+  // Row 4: Section header — Zusammenfassung
+  setCell(ws, 'A4', 'ZUSAMMENFASSUNG', XSTYLE.section);
+  setCell(ws, 'B4', '', XSTYLE.section);
+  // Row 5: Einnahmen — reference the total rows in each sheet (avoids double-counting)
+  const einLastData = einTotalRow - 1;
+  const posLastData = posTotalRow - 1;
+  const versLastData = versTotalRow - 1;
+  setCell(ws, 'A5', 'Einnahmen (monatlich)', XSTYLE.kpiLbl);
+  ws['B5'] = { f: `SUM(Einnahmen!E2:E${einLastData})`, t: 'n', z: '#,##0.00 "€"', s: XSTYLE.kpi };
+  // Row 6: Ausgaben
+  setCell(ws, 'A6', 'Ausgaben (monatlich)', XSTYLE.kpiLbl);
+  ws['B6'] = { f: `SUM(Ausgaben!H2:H${posLastData})+SUM(Versicherungen!K2:K${versLastData})`, t: 'n', z: '#,##0.00 "€"', s: { ...XSTYLE.kpi, font: { ...XSTYLE.kpi.font, color: { rgb: '8B2635' } } } };
+  // Row 7: Saldo (big)
+  setCell(ws, 'A7', 'SALDO', { font: { bold: true, sz: 12, color: { rgb: '1A1A1A' }, name: 'Calibri' }, alignment: { horizontal: 'left', vertical: 'center' }, fill: { fgColor: { rgb: 'E8F0E9' } }, border: { top: { style: 'thin', color: { rgb: '2D5F3F' } }, bottom: { style: 'thin', color: { rgb: '2D5F3F' } } } });
+  ws['B7'] = { f: 'B5-B6', t: 'n', z: '+ #,##0.00 "€";- #,##0.00 "€";0.00 "€"', s: { ...XSTYLE.saldoBig, fill: { fgColor: { rgb: 'E8F0E9' } }, border: { top: { style: 'thin', color: { rgb: '2D5F3F' } }, bottom: { style: 'thin', color: { rgb: '2D5F3F' } } } } };
+  // Row 8: Sparen & Tilgung
+  setCell(ws, 'A8', 'davon Sparen & Tilgung', XSTYLE.kpiLbl);
+  ws['B8'] = { f: 'SUMIFS(Ausgaben!H:H,Ausgaben!C:C,"Sparen")+SUMIFS(Ausgaben!H:H,Ausgaben!C:C,"Kredit")', t: 'n', z: '#,##0.00 "€"', s: XSTYLE.kpi };
+
+  // Row 10: Section — Aufschlüsselung Ausgaben
+  setCell(ws, 'A10', 'AUFSCHLÜSSELUNG AUSGABEN', XSTYLE.section);
+  setCell(ws, 'B10', '', XSTYLE.section);
+  const breakdown = [
+    ['Lebenshaltung',                 'SUMIFS(Ausgaben!H:H,Ausgaben!C:C,"Lebenshaltung")'],
+    ['Wohnen',                        'SUMIFS(Ausgaben!H:H,Ausgaben!C:C,"Wohnen")'],
+    ['Mobilität',                     'SUMIFS(Ausgaben!H:H,Ausgaben!C:C,"Mobilität")'],
+    ['Kinder',                        'SUMIFS(Ausgaben!H:H,Ausgaben!C:C,"Kinder")'],
+    ['Sonstiges',                     'SUMIFS(Ausgaben!H:H,Ausgaben!C:C,"Sonstiges")'],
+    ['Versicherungen (Schutz)',       'SUMIFS(Versicherungen!K:K,Versicherungen!G:G,"nein")'],
+    ['Versicherungen (kapitalbildend)','SUMIFS(Versicherungen!K:K,Versicherungen!G:G,"ja")'],
+    ['Kredit',                        'SUMIFS(Ausgaben!H:H,Ausgaben!C:C,"Kredit")'],
+    ['Sparen',                        'SUMIFS(Ausgaben!H:H,Ausgaben!C:C,"Sparen")'],
+    ['Rücklage',                      'SUMIFS(Ausgaben!H:H,Ausgaben!C:C,"Rücklage")'],
+  ];
+  breakdown.forEach((row, i) => {
+    const r = 11 + i;
+    const zebra = i % 2 === 1;
+    const lblStyle = zebra ? { ...XSTYLE.cellText, fill: { fgColor: { rgb: 'FAF7F2' } } } : XSTYLE.cellText;
+    const numStyle = zebra ? { ...XSTYLE.cellNum, fill: { fgColor: { rgb: 'FAF7F2' } } } : XSTYLE.cellNum;
+    setCell(ws, `A${r}`, row[0], lblStyle);
+    ws[`B${r}`] = { f: row[1], t: 'n', z: '#,##0.00 "€"', s: numStyle };
+  });
+
+  // Footer note
+  const noteRow = 11 + breakdown.length + 1;
+  setCell(ws, `A${noteRow}`, 'Alle Werte in Spalte B sind Formeln. Ändere Beträge in Einnahmen / Ausgaben / Versicherungen — alles rechnet sich neu.', XSTYLE.export);
+  setCell(ws, `A${noteRow + 1}`, `Export erstellt: ${new Date().toLocaleString('de-DE')}`, XSTYLE.export);
+
+  ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: noteRow, c: 1 } });
+  ws['!cols'] = [{wch: 38}, {wch: 22}];
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }, // title merged
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 1 } }, // subtitle merged
+    { s: { r: 3, c: 0 }, e: { r: 3, c: 1 } }, // section 1 merged
+    { s: { r: 9, c: 0 }, e: { r: 9, c: 1 } }, // section 2 merged
+  ];
+  ws['!rows'] = [
+    { hpt: 30 },   // title
+    { hpt: 18 },   // subtitle
+    { hpt: 6 },    // spacer
+    { hpt: 22 },   // section
+    { hpt: 22 },   // Einnahmen
+    { hpt: 22 },   // Ausgaben
+    { hpt: 36 },   // Saldo (big)
+    { hpt: 22 },   // Sparen
+    { hpt: 6 },    // spacer
+    { hpt: 22 },   // section 2
+  ];
+  XLSX.utils.book_append_sheet(wb, ws, 'Übersicht');
+
+  // Reorder sheets so Übersicht is first
+  wb.SheetNames = ['Übersicht', 'Einnahmen', 'Ausgaben', 'Versicherungen', 'Konten'];
+
+  const filename = `cashflow-wanitschke-${new Date().toISOString().slice(0, 10)}.xlsx`;
+  XLSX.writeFile(wb, filename);
+}
+
+document.getElementById('btn-export-xlsx').addEventListener('click', async () => {
+  try {
+    showToast('Erzeuge Excel…');
+    await exportToExcel();
+    showToast('Excel exportiert ✓');
+  } catch (err) {
+    console.error(err);
+    showToast('Fehler: ' + err.message);
+  }
+});
+
+// ─────────────  EXPORT / IMPORT / RESET  ─────────────
+document.getElementById('btn-export').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `cashflow-wanitschke-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('JSON exportiert');
+});
+
+document.getElementById('btn-import').addEventListener('click', () => {
+  document.getElementById('import-file').click();
+});
+
+document.getElementById('import-file').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+    if (!parsed.einnahmen || !parsed.positionen || !parsed.versicherungen) {
+      throw new Error('Ungültiges Format');
+    }
+    if (!confirm('Aktuelle Daten überschreiben?')) return;
+    pushHistory();
+    state = parsed;
+    saveState();
+    render();
+    showToast('Importiert');
+  } catch (err) {
+    alert('Import fehlgeschlagen: ' + err.message);
+  }
+  e.target.value = '';
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  if (!confirm('Wirklich auf den Auslieferungszustand zurücksetzen? Alle Änderungen gehen verloren.')) return;
+  pushHistory();
+  state = JSON.parse(JSON.stringify(DEFAULT_DATA));
+  saveState();
+  render();
+  showToast('Zurückgesetzt');
+});
+
+document.getElementById('btn-print').addEventListener('click', () => {
+  // Make all tabs visible for printing
+  document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'block');
+  window.print();
+  setTimeout(() => {
+    document.querySelectorAll('.tab-content').forEach(c => c.style.display = '');
+  }, 1000);
+});
+
+// ─────────────  TOAST  ─────────────
+const toast = document.getElementById('toast');
+let toastTimer = null;
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+}
+
+// ─────────────  UNDO/REDO WIRING  ─────────────
+document.getElementById('btn-undo').addEventListener('click', undo);
+document.getElementById('btn-redo').addEventListener('click', redo);
+
+// ─────────────  KEYBOARD SHORTCUTS  ─────────────
+document.addEventListener('keydown', (e) => {
+  // Ignore shortcuts inside input/textarea/select unless it's Escape
+  const inField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
+  if (e.key === 'Escape' && modal.open) modal.close();
+  const meta = e.metaKey || e.ctrlKey;
+  if (!meta) return;
+  // Cmd/Ctrl+Z → undo (or Cmd+Shift+Z → redo)
+  if (e.key === 'z' || e.key === 'Z') {
+    if (inField) return; // don't hijack text-input undo
+    e.preventDefault();
+    if (e.shiftKey) redo(); else undo();
+    return;
+  }
+  // Cmd/Ctrl+Y → redo
+  if (e.key === 'y' || e.key === 'Y') {
+    if (inField) return;
+    e.preventDefault();
+    redo();
+    return;
+  }
+  // Cmd/Ctrl+N → new entry on current tab
+  if (e.key === 'n' || e.key === 'N') {
+    e.preventDefault();
+    const map = { einnahmen: 'einnahme', positionen: 'position', versicherungen: 'versicherung' };
+    if (map[activeTab]) openModal(map[activeTab]);
+  }
+});
+
+// ─────────────  GOOGLE DRIVE OAUTH (mobile / non-Chromium fallback)  ─────────────
+const OAUTH_CLIENT_ID = '566462258090-v2rvo8sosh4bhb8ikcna58kn6ro28on3.apps.googleusercontent.com';
+const ALLOWED_EMAILS = new Set([
+  'martin.wanitschke@gmail.com',
+  'maria.wanitschke@gmail.com',
+]);
+const OAUTH_SCOPES = 'https://www.googleapis.com/auth/drive';
+const DRIVE_FILE_NAME = 'cashflow-data.json';
+const OAUTH_STATE_KEY = 'cashflow-oauth-state';
+
+let gisTokenClient = null;
+let oauthAccessToken = null;
+let oauthTokenExpiresAt = 0;
+let oauthFileId = null;
+let oauthUserEmail = null;
+
+function loadOAuthState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(OAUTH_STATE_KEY) || '{}');
+    oauthFileId = s.fileId || null;
+    oauthUserEmail = s.userEmail || null;
+    // Cached access token survives reloads within its lifetime (~1h)
+    if (s.accessToken && s.tokenExpiresAt && Date.now() < s.tokenExpiresAt - 30000) {
+      oauthAccessToken = s.accessToken;
+      oauthTokenExpiresAt = s.tokenExpiresAt;
+    }
+  } catch {}
+}
+function saveOAuthState() {
+  localStorage.setItem(OAUTH_STATE_KEY, JSON.stringify({
+    fileId: oauthFileId,
+    userEmail: oauthUserEmail,
+    accessToken: oauthAccessToken,
+    tokenExpiresAt: oauthTokenExpiresAt,
+  }));
+}
+function clearOAuthState() {
+  oauthFileId = null;
+  oauthUserEmail = null;
+  oauthAccessToken = null;
+  oauthTokenExpiresAt = 0;
+  localStorage.removeItem(OAUTH_STATE_KEY);
+}
+
+function isOAuthConnected() { return !!(oauthAccessToken && oauthFileId); }
+
+function initGISClient() {
+  if (gisTokenClient) return gisTokenClient;
+  if (!window.google || !google.accounts || !google.accounts.oauth2) return null;
+  gisTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: OAUTH_CLIENT_ID,
+    scope: OAUTH_SCOPES,
+    callback: () => {}, // set per-request
+    error_callback: () => {}, // set per-request
+  });
+  return gisTokenClient;
+}
+
+async function waitForGIS(timeout = 10000) {
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    if (window.google && google.accounts && google.accounts.oauth2) return true;
+    await new Promise(r => setTimeout(r, 100));
+  }
+  throw new Error('Google Identity Services konnte nicht geladen werden — Internet-Verbindung?');
+}
+
+function oauthAuthorize(promptMode = '') {
+  return new Promise(async (resolve, reject) => {
+    await waitForGIS();
+    const client = initGISClient();
+    if (!client) return reject(new Error('GIS-Client nicht verfügbar'));
+    client.callback = (resp) => {
+      if (resp.error) return reject(new Error(resp.error_description || resp.error));
+      oauthAccessToken = resp.access_token;
+      oauthTokenExpiresAt = Date.now() + (resp.expires_in || 3600) * 1000 - 60000;
+      saveOAuthState(); // persist token so reloads within 1h don't need re-auth
+      resolve();
+    };
+    client.error_callback = (err) => reject(new Error(err.message || 'OAuth abgebrochen'));
+    client.requestAccessToken({ prompt: promptMode });
+  });
+}
+
+async function ensureOAuthToken() {
+  if (oauthAccessToken && Date.now() < oauthTokenExpiresAt) return;
+  await oauthAuthorize(''); // silent if user already granted
+}
+
+async function driveFetch(url, opts = {}) {
+  await ensureOAuthToken();
+  opts.headers = { ...(opts.headers || {}), 'Authorization': `Bearer ${oauthAccessToken}` };
+  let r = await fetch(url, opts);
+  if (r.status === 401) {
+    oauthAccessToken = null;
+    await oauthAuthorize('');
+    opts.headers['Authorization'] = `Bearer ${oauthAccessToken}`;
+    r = await fetch(url, opts);
+  }
+  return r;
+}
+
+async function driveFindFileByName(name) {
+  const q = `name='${name.replace(/'/g, "\\'")}' and trashed=false and mimeType!='application/vnd.google-apps.folder'`;
+  const r = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,modifiedTime,parents)`);
+  if (!r.ok) throw new Error('Drive-Suche fehlgeschlagen: HTTP ' + r.status);
+  const d = await r.json();
+  return d.files && d.files[0] ? d.files[0] : null;
+}
+
+async function driveCreateFile(name, content, parentId) {
+  const metadata = { name, mimeType: 'application/json' };
+  if (parentId) metadata.parents = [parentId];
+  const boundary = '-------xx' + Math.random().toString(36).slice(2);
+  const body =
+    `--${boundary}\r\n` +
+    'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+    JSON.stringify(metadata) + '\r\n' +
+    `--${boundary}\r\n` +
+    'Content-Type: application/json\r\n\r\n' +
+    content + '\r\n' +
+    `--${boundary}--`;
+  const r = await driveFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+    method: 'POST',
+    headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
+    body,
+  });
+  if (!r.ok) throw new Error('Drive Create fehlgeschlagen: HTTP ' + r.status);
+  return (await r.json()).id;
+}
+
+async function driveReadFile(fileId) {
+  const r = await driveFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
+  if (!r.ok) throw new Error('Drive Read fehlgeschlagen: HTTP ' + r.status);
+  return await r.json();
+}
+
+async function driveUpdateFile(fileId, content) {
+  const r = await driveFetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: content,
+  });
+  if (!r.ok) {
+    if (r.status === 404) return false;
+    throw new Error('Drive Update fehlgeschlagen: HTTP ' + r.status);
+  }
+  return true;
+}
+
+async function driveGetUserEmail() {
+  try {
+    const r = await driveFetch('https://www.googleapis.com/drive/v3/about?fields=user');
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d.user && d.user.emailAddress;
+  } catch { return null; }
+}
+
+// Connect / setup on first mobile use
+async function oauthConnect() {
+  await oauthAuthorize(''); // shows consent if needed
+
+  oauthUserEmail = await driveGetUserEmail();
+  const existing = await driveFindFileByName(DRIVE_FILE_NAME);
+  if (existing) {
+    oauthFileId = existing.id;
+  } else {
+    // Not found — create new one at root
+    if (!confirm(`In deinem Drive gibt es noch keine ${DRIVE_FILE_NAME}. Neue leere Datei mit den Default-Daten anlegen?`)) {
+      throw new Error('Verbinden abgebrochen — Datei nicht in Drive gefunden');
+    }
+    oauthFileId = await driveCreateFile(DRIVE_FILE_NAME, JSON.stringify(state, null, 2));
+  }
+  saveOAuthState();
+
+  // Load current cloud state
+  const cloudData = await driveReadFile(oauthFileId);
+  const migrated = migrateState(cloudData);
+  state = migrated;
+  state.lastModified = new Date().toISOString();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  fileLastSyncAt = Date.now();
+  render();
+}
+
+async function oauthUploadState() {
+  if (!isOAuthConnected()) throw new Error('OAuth nicht verbunden');
+  const json = JSON.stringify(state, null, 2);
+  const ok = await driveUpdateFile(oauthFileId, json);
+  if (!ok) {
+    // File deleted or moved — recreate
+    oauthFileId = await driveCreateFile(DRIVE_FILE_NAME, json);
+    saveOAuthState();
+  }
+  fileLastSyncAt = Date.now();
+}
+
+async function oauthReloadFromDrive() {
+  if (!isOAuthConnected()) throw new Error('OAuth nicht verbunden');
+  const cloudData = await driveReadFile(oauthFileId);
+  const migrated = migrateState(cloudData);
+  state = migrated;
+  state.lastModified = new Date().toISOString();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  fileLastSyncAt = Date.now();
+  render();
+}
+
+// Restore on startup — try silent re-auth if we already have a fileId
+async function tryRestoreOAuth() {
+  loadOAuthState();
+  if (!oauthFileId) return false;
+  try {
+    await oauthAuthorize(''); // silent
+    return true;
+  } catch (err) {
+    // Silent failed — user needs to click "Verbinden" again
+    console.warn('Silent OAuth failed:', err.message);
+    return false;
+  }
+}
+
+// ─────────────  FILE SYSTEM ACCESS (Drive Desktop pattern)  ─────────────
+// We persist the FileSystemFileHandle in IndexedDB so the connection survives reloads.
+const FILE_KEY = 'cashflow-file-handle';
+const FILE_META_KEY = 'cashflow-file-meta';
+let fileHandle = null;
+let fileLastSyncAt = null;
+let bannerMode = 'hidden'; // hidden | initial | choose | grant | error
+let syncStatus = 'idle'; // idle | pending | saving | saved | error
+const fsApiSupported = typeof window !== 'undefined' && 'showOpenFilePicker' in window;
+
+function isFileConnected() { return Boolean(fileHandle) || isOAuthConnected(); }
+function currentStorageMode() {
+  if (fileHandle) return 'file';
+  if (isOAuthConnected()) return 'oauth';
+  return 'none';
+}
+
+// ── IndexedDB wrapper for handle persistence ──
+function idbOpen() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open('cashflow-fs', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('handles');
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+async function idbSet(key, value) {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction('handles', 'readwrite');
+    tx.objectStore('handles').put(value, key);
+    tx.oncomplete = () => res();
+    tx.onerror = () => rej(tx.error);
+  });
+}
+async function idbGet(key) {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction('handles', 'readonly');
+    const req = tx.objectStore('handles').get(key);
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+async function idbDelete(key) {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction('handles', 'readwrite');
+    tx.objectStore('handles').delete(key);
+    tx.oncomplete = () => res();
+    tx.onerror = () => rej(tx.error);
+  });
+}
+
+function loadFileMeta() {
+  try { return JSON.parse(localStorage.getItem(FILE_META_KEY) || '{}'); } catch { return {}; }
+}
+function saveFileMeta(m) {
+  localStorage.setItem(FILE_META_KEY, JSON.stringify(m));
+}
+
+function setSyncStatus(s) {
+  syncStatus = s;
+  updateDriveStatusPill();
+}
+
+function updateDriveStatusPill() {
+  const wrap = document.getElementById('drive-pill-wrap');
+  if (!wrap) return;
+  if (!isFileConnected()) {
+    wrap.innerHTML = `<span class="drive-status-pill"><span class="dot"></span>nicht verbunden</span>`;
+    return;
+  }
+  let label;
+  if (syncStatus === 'pending')      label = 'gleich…';
+  else if (syncStatus === 'saving')  label = 'speichert…';
+  else if (syncStatus === 'error')   label = 'fehler';
+  else {
+    const d = fileLastSyncAt;
+    if (!d) label = 'verbunden';
+    else {
+      const ago = Math.floor((Date.now() - d) / 60000);
+      if      (ago < 1)   label = 'gerade gesichert';
+      else if (ago < 60)  label = `${ago} Min`;
+      else if (ago < 1440)label = `${Math.floor(ago/60)} h`;
+      else                label = `${Math.floor(ago/1440)} d`;
+    }
+  }
+  const ok = syncStatus !== 'error';
+  wrap.innerHTML = `<span class="drive-status-pill ${ok ? 'connected' : ''}"><span class="dot"></span>${escapeHtml(label)}</span>`;
+}
+setInterval(updateDriveStatusPill, 60000);
+
+// ── Banner UX ──
+function showBanner(mode, opts = {}) {
+  bannerMode = mode;
+  const banner = document.getElementById('file-banner');
+  const title = document.getElementById('banner-title');
+  const text = document.getElementById('banner-text');
+  banner.classList.remove('warn', 'error');
+  if (mode === 'hidden') { banner.classList.add('hidden'); return; }
+  banner.classList.remove('hidden');
+  // Hide all action buttons via inline style (bulletproof, no CSS class needed)
+  const btnIds = ['banner-setup-btn','banner-open-btn','banner-new-btn','banner-grant-btn','banner-oauth-btn','banner-cancel-btn'];
+  btnIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  const showBtn = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = '';
+  };
+  if (mode === 'initial') {
+    title.textContent = '📁 App ist noch nicht mit deiner Datei verbunden';
+    text.innerHTML = 'Verbinde die App einmalig mit einer JSON-Datei in deinem Drive-Ordner. Ab dann läuft Auto-Save direkt dorthin und Drive Desktop synct den Rest.';
+    document.getElementById('banner-setup-btn').style.display = '';
+  } else if (mode === 'choose') {
+    title.textContent = 'Datei einrichten';
+    text.innerHTML = 'Wähle eine bestehende <code>cashflow-data.json</code> in deinem Drive-Ordner — oder leg eine neue an, wenn noch keine da ist.';
+    document.getElementById('banner-open-btn').style.display = '';
+    document.getElementById('banner-new-btn').style.display = '';
+    document.getElementById('banner-cancel-btn').style.display = '';
+  } else if (mode === 'grant') {
+    banner.classList.add('warn');
+    title.textContent = '🔒 Berechtigung nötig';
+    text.innerHTML = `Verbindung mit <code>${escapeHtml(opts.fileName || 'cashflow-data.json')}</code> ist hinterlegt — Chrome braucht aber pro Session deine Bestätigung.`;
+    document.getElementById('banner-grant-btn').style.display = '';
+    document.getElementById('banner-cancel-btn').style.display = '';
+  } else if (mode === 'oauth-initial') {
+    title.textContent = '☁️ Mit Google Drive verbinden';
+    text.innerHTML = 'Dein Browser (mobil oder Safari) unterstützt direkten Dateizugriff nicht. Login per Google → App liest und schreibt <code>cashflow-data.json</code> in deinem Drive-Ordner.';
+    document.getElementById('banner-oauth-btn').style.display = '';
+  } else if (mode === 'oauth-needs-consent') {
+    banner.classList.add('warn');
+    title.textContent = '🔒 Erneut mit Google anmelden';
+    text.innerHTML = oauthUserEmail
+      ? `Deine Session (<code>${escapeHtml(oauthUserEmail)}</code>) ist abgelaufen — kurz erneut anmelden.`
+      : 'Deine OAuth-Session ist abgelaufen — kurz erneut mit Google anmelden.';
+    document.getElementById('banner-oauth-btn').style.display = '';
+    document.getElementById('banner-cancel-btn').style.display = '';
+  } else if (mode === 'unsupported') {
+    banner.classList.add('error');
+    title.textContent = '⚠️ Browser unterstützt File System Access nicht';
+    text.innerHTML = 'Datei-Sync funktioniert nur in <strong>Chrome, Edge oder Brave</strong>. Im Safari/Firefox bleibt nur JSON-Export/Import. Wechsle den Browser, falls du Drive-Sync nutzen willst.';
+  }
+}
+
+// ── File operations ──
+async function pickExistingFile() {
+  if (!fsApiSupported) { showBanner('unsupported'); return; }
+  try {
+    const [handle] = await window.showOpenFilePicker({
+      types: [{ description: 'Cashflow JSON', accept: { 'application/json': ['.json'] } }],
+      multiple: false,
+      excludeAcceptAllOption: false,
+    });
+    fileHandle = handle;
+    await idbSet(FILE_KEY, handle);
+    saveFileMeta({ name: handle.name });
+    await loadFromFile(); // pulls remote state into app
+    showBanner('hidden');
+    setSyncStatus('saved');
+    showToast('Verbunden mit ' + handle.name);
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      console.error(err);
+      showToast('Fehler: ' + err.message);
+    }
+  }
+}
+
+async function createNewFile() {
+  if (!fsApiSupported) { showBanner('unsupported'); return; }
+  try {
+    const handle = await window.showSaveFilePicker({
+      suggestedName: 'cashflow-data.json',
+      types: [{ description: 'Cashflow JSON', accept: { 'application/json': ['.json'] } }],
+    });
+    fileHandle = handle;
+    await idbSet(FILE_KEY, handle);
+    saveFileMeta({ name: handle.name });
+    await writeToFile(); // initial write
+    showBanner('hidden');
+    setSyncStatus('saved');
+    showToast('Datei angelegt: ' + handle.name);
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      console.error(err);
+      showToast('Fehler: ' + err.message);
+    }
+  }
+}
+
+async function loadFromFile() {
+  if (!fileHandle) return;
+  try {
+    const file = await fileHandle.getFile();
+    const text = await file.text();
+    if (!text.trim()) {
+      // Brand-new empty file — write our current state into it
+      await writeToFile();
+      return;
+    }
+    const data = JSON.parse(text);
+    if (!data.einnahmen || !data.positionen || !data.versicherungen) {
+      throw new Error('Ungültiges Format — erwartet: einnahmen / positionen / versicherungen');
+    }
+    const wasV1 = (data.version || 1) < 2;
+    state = migrateState(data);
+    state.lastModified = new Date().toISOString();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if (wasV1) {
+      // Persist migration back to file so next load is fast + schema is current
+      writeToFile().catch(err => console.warn('Migration write-back failed:', err));
+    }
+    fileLastSyncAt = file.lastModified || Date.now();
+    render();
+  } catch (err) {
+    console.error('Load failed:', err);
+    showToast('Datei laden fehlgeschlagen: ' + err.message);
+    setSyncStatus('error');
+  }
+}
+
+async function writeToFile() {
+  if (!fileHandle) return;
+  // Verify we still have permission
+  const perm = await fileHandle.queryPermission({ mode: 'readwrite' });
+  if (perm !== 'granted') {
+    setSyncStatus('error');
+    showBanner('grant', { fileName: fileHandle.name });
+    return;
+  }
+  try {
+    const writable = await fileHandle.createWritable();
+    await writable.write(JSON.stringify(state, null, 2));
+    await writable.close();
+    fileLastSyncAt = Date.now();
+  } catch (err) {
+    console.error('Write failed:', err);
+    setSyncStatus('error');
+    throw err;
+  }
+}
+
+// ── Auto-sync (debounced) — routes to FS Access or OAuth Drive ──
+let autoSyncTimer = null;
+function scheduleAutoSync() {
+  if (!isFileConnected()) return;
+  clearTimeout(autoSyncTimer);
+  setSyncStatus('pending');
+  const delay = currentStorageMode() === 'oauth' ? 2000 : 800; // slower for network
+  autoSyncTimer = setTimeout(async () => {
+    try {
+      setSyncStatus('saving');
+      if (currentStorageMode() === 'file') await writeToFile();
+      else if (currentStorageMode() === 'oauth') await oauthUploadState();
+      setSyncStatus('saved');
+    } catch (err) {
+      console.error('Auto-sync failed:', err);
+      setSyncStatus('error');
+    }
+  }, delay);
+}
+
+// Flush on tab close
+window.addEventListener('beforeunload', () => {
+  if (autoSyncTimer && isFileConnected()) {
+    clearTimeout(autoSyncTimer);
+    if (currentStorageMode() === 'file') writeToFile().catch(() => {});
+    else if (currentStorageMode() === 'oauth') oauthUploadState().catch(() => {});
+  }
+});
+
+// ── Init: try to restore session (FS handle first, then OAuth) ──
+async function tryRestoreHandle() {
+  // 1) OAuth already fully set up? Try cached token first, then silent re-auth
+  loadOAuthState();
+  if (oauthFileId) {
+    // 1a) Have a still-valid cached token? Use it directly, no GIS round-trip
+    if (oauthAccessToken && Date.now() < oauthTokenExpiresAt) {
+      try {
+        await oauthReloadFromDrive();
+        showBanner('hidden');
+        setSyncStatus('saved');
+        return;
+      } catch (err) {
+        // Token invalid despite not expired (revoked etc.) — fall through
+        console.warn('Cached token failed:', err.message);
+        oauthAccessToken = null;
+      }
+    }
+    // 1b) Try silent re-auth (works only in some browsers)
+    try {
+      await oauthAuthorize('');
+      await oauthReloadFromDrive();
+      showBanner('hidden');
+      setSyncStatus('saved');
+      return;
+    } catch (err) {
+      console.warn('OAuth silent restore failed:', err.message);
+      showBanner('oauth-needs-consent');
+      return;
+    }
+  }
+
+  // 2) FS Access if supported
+  if (fsApiSupported) {
+    try {
+      const stored = await idbGet(FILE_KEY);
+      if (stored) {
+        const perm = await stored.queryPermission({ mode: 'readwrite' });
+        if (perm === 'granted') {
+          fileHandle = stored;
+          await loadFromFile();
+          showBanner('hidden');
+          setSyncStatus('saved');
+          return;
+        }
+        showBanner('grant', { fileName: stored.name });
+        return;
+      }
+    } catch (err) {
+      console.error('FS restore failed:', err);
+    }
+    showBanner('initial');
+    return;
+  }
+
+  // 3) No FS API — mobile / Safari / Firefox → offer OAuth
+  showBanner('oauth-initial');
+}
+
+async function reGrantHandle() {
+  const stored = await idbGet(FILE_KEY);
+  if (!stored) { showBanner('initial'); return; }
+  try {
+    const perm = await stored.requestPermission({ mode: 'readwrite' });
+    if (perm === 'granted') {
+      fileHandle = stored;
+      await loadFromFile();
+      showBanner('hidden');
+      setSyncStatus('saved');
+      showToast('Verbunden ✓');
+    } else {
+      showToast('Berechtigung nicht erteilt');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('Fehler: ' + err.message);
+  }
+}
+
+// ── UI wiring ──
+const driveModal = document.getElementById('drive-modal');
+const driveStatusText = document.getElementById('drive-status-text');
+const driveLastSync = document.getElementById('drive-last-sync');
+
+function refreshDriveDialog() {
+  if (isFileConnected()) {
+    const d = fileLastSyncAt ? new Date(fileLastSyncAt) : null;
+    driveStatusText.innerHTML = `<span style="color: var(--accent);">●</span> Verbunden mit <strong>${escapeHtml(fileHandle.name)}</strong>` +
+      (d ? `<br><span style="color: var(--ink-muted);">Letzte Sync: ${d.toLocaleString('de-DE')}</span>` : '');
+  } else if (!fsApiSupported) {
+    driveStatusText.innerHTML = `<span style="color: var(--warning);">●</span> Browser unterstützt File System Access nicht. Nutze Chrome, Edge oder Brave.`;
+  } else {
+    const meta = loadFileMeta();
+    driveStatusText.innerHTML = meta.name
+      ? `<span style="color: var(--gold);">●</span> Letzte Datei: <code>${escapeHtml(meta.name)}</code> — Berechtigung nötig.`
+      : `<span style="color: var(--ink-soft);">●</span> Noch keine Datei verbunden.`;
+  }
+  driveLastSync.textContent = fileLastSyncAt ? `Letzte Sync: ${new Date(fileLastSyncAt).toLocaleString('de-DE')}` : '';
+  const connected = isFileConnected();
+  document.getElementById('drive-pick-btn').disabled = !fsApiSupported;
+  document.getElementById('drive-reload-btn').disabled = !connected;
+  document.getElementById('drive-write-btn').disabled = !connected;
+  document.getElementById('drive-disconnect-btn').disabled = !connected;
+}
+
+document.getElementById('link-drive').addEventListener('click', (e) => {
+  e.preventDefault();
+  refreshDriveDialog();
+  driveModal.showModal();
+});
+
+// Banner buttons
+document.getElementById('banner-setup-btn').addEventListener('click', () => showBanner('choose'));
+document.getElementById('banner-cancel-btn').addEventListener('click', () => {
+  if (isFileConnected()) showBanner('hidden');
+  else showBanner('initial');
+});
+document.getElementById('banner-open-btn').addEventListener('click', pickExistingFile);
+document.getElementById('banner-new-btn').addEventListener('click', createNewFile);
+document.getElementById('banner-grant-btn').addEventListener('click', reGrantHandle);
+document.getElementById('banner-oauth-btn').addEventListener('click', async () => {
+  try {
+    showToast('Melde bei Google an…');
+    await oauthConnect();
+    showBanner('hidden');
+    setSyncStatus('saved');
+    showToast('Mit Drive verbunden ✓');
+  } catch (err) {
+    console.error(err);
+    showToast('Fehler: ' + err.message);
+    setSyncStatus('error');
+  }
+});
+
+// Dialog buttons
+document.getElementById('drive-pick-btn').addEventListener('click', async () => {
+  if (!fsApiSupported) { showToast('Nicht unterstützt — nutze Chrome/Edge'); return; }
+  // Choose between open/new — show banner, close modal
+  driveModal.close();
+  showBanner('choose');
+});
+document.getElementById('drive-reload-btn').addEventListener('click', async () => {
+  if (!confirm('Lokale Daten mit Datei-Stand überschreiben?')) return;
+  pushHistory();
+  await loadFromFile();
+  refreshDriveDialog();
+  showToast('Datei neu geladen');
+});
+document.getElementById('drive-write-btn').addEventListener('click', async () => {
+  try {
+    setSyncStatus('saving');
+    await writeToFile();
+    setSyncStatus('saved');
+    refreshDriveDialog();
+    showToast('Gesichert ✓');
+  } catch (err) {
+    showToast('Fehler: ' + err.message);
+  }
+});
+document.getElementById('drive-disconnect-btn').addEventListener('click', async () => {
+  if (!confirm('Verbindung trennen? Die Datei bleibt in deinem Drive-Ordner erhalten.')) return;
+  fileHandle = null;
+  fileLastSyncAt = null;
+  await idbDelete(FILE_KEY);
+  saveFileMeta({});
+  setSyncStatus('idle');
+  refreshDriveDialog();
+  showBanner('initial');
+  showToast('Getrennt');
+});
+
+updateDriveStatusPill();
+
+// ─────────────  AUTH GATE  ─────────────
+function hideAuthGate() {
+  document.getElementById('auth-gate').classList.add('hidden');
+  document.body.classList.remove('locked');
+}
+function showAuthGateError(msg) {
+  document.getElementById('auth-error').textContent = msg;
+}
+
+async function isEmailAuthorized(email) {
+  return email && ALLOWED_EMAILS.has(email.toLowerCase());
+}
+
+async function tryPassAuthGate() {
+  // Cached OAuth email in localStorage counts as authorized if in allowlist
+  loadOAuthState();
+  if (oauthUserEmail && await isEmailAuthorized(oauthUserEmail)) {
+    hideAuthGate();
+    tryRestoreHandle();
+    return;
+  }
+  // Otherwise show login button and wait for user
+  document.body.classList.add('locked');
+}
+
+document.getElementById('auth-signin-btn').addEventListener('click', async () => {
+  showAuthGateError('');
+  const btn = document.getElementById('auth-signin-btn');
+  btn.disabled = true;
+  btn.textContent = 'Anmelden…';
+  try {
+    await waitForGIS();
+    await oauthAuthorize('');
+    const email = await driveGetUserEmail();
+    if (!email) throw new Error('Konnte E-Mail nicht auslesen');
+    if (!(await isEmailAuthorized(email))) {
+      clearOAuthState();
+      throw new Error(`Zugang für ${email} nicht erlaubt.`);
+    }
+    oauthUserEmail = email;
+    saveOAuthState();
+    hideAuthGate();
+    // Now continue with normal app init
+    tryRestoreHandle();
+  } catch (err) {
+    showAuthGateError(err.message || 'Anmeldung fehlgeschlagen');
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" style="vertical-align: -3px; margin-right: 6px;"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> Mit Google anmelden';
+  }
+});
+
+// Kick off: gate first, then app
+tryPassAuthGate();
+
+// ─────────────  INIT  ─────────────
+render();
+</script>
+</body>
+</html>
