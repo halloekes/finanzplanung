@@ -240,7 +240,7 @@ header {
 
 /* ─────────────  FREISTELLUNGSAUFTRÄGE  ───────────── */
 .fsa-card {
-  margin: -2rem 0 4rem;
+  margin: 0;
   background: var(--bg-elevated);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -1131,16 +1131,6 @@ footer {
   </div>
 </section>
 
-<section class="fsa-card container" id="fsa-section">
-  <div class="fsa-head">
-    <div>
-      <div class="section-title">Freistellungsaufträge</div>
-      <div class="section-desc" style="margin-bottom:0">Sparerpauschbetrag je Institut – Eltern zusammen max. 2.000 €, Kinder je 1.000 €.</div>
-    </div>
-    <button class="btn" data-add="freistellung">+ Freistellungsauftrag</button>
-  </div>
-  <div id="fsa-body"></div>
-</section>
 
 <section class="container tabs">
   <div class="tab-bar" role="tablist">
@@ -1148,6 +1138,7 @@ footer {
     <button class="tab-btn" data-tab="positionen">Ausgaben &amp; Sparen <span class="count" id="cnt-positionen">0</span></button>
     <button class="tab-btn" data-tab="versicherungen">Versicherungen <span class="count" id="cnt-versicherungen">0</span></button>
     <button class="tab-btn" data-tab="konten">Konto-Verteilung</button>
+    <button class="tab-btn" data-tab="freistellungen">Freistellungsaufträge <span class="count" id="cnt-freistellungen">0</span></button>
   </div>
 
   <!-- Einnahmen -->
@@ -1337,6 +1328,19 @@ footer {
         </thead>
         <tbody></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Freistellungsaufträge -->
+  <div class="tab-content" data-content="freistellungen">
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <span class="section-desc" style="margin:0">Sparerpauschbetrag je Institut – Eltern zusammen max. 2.000 €, Kinder je 1.000 €.</span>
+      </div>
+      <button class="btn" data-add="freistellung">+ Freistellungsauftrag</button>
+    </div>
+    <div class="fsa-card" id="fsa-section">
+      <div id="fsa-body"></div>
     </div>
   </div>
 </section>
@@ -1657,6 +1661,7 @@ function render() {
   document.getElementById('cnt-einnahmen').textContent = state.einnahmen.length;
   document.getElementById('cnt-positionen').textContent = state.positionen.length;
   document.getElementById('cnt-versicherungen').textContent = state.versicherungen.length;
+  document.getElementById('cnt-freistellungen').textContent = (state.freistellungen || []).length;
 
   // Tables
   populateFilterDropdowns();
