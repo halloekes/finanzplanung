@@ -79,6 +79,20 @@ function glide(P, R0, on) {
   return { gK: gK, gG: gG, mK: nK / v, mG: nG / v };
 }
 
+function ingPerf(P, S) {
+  if (!isYm(P.ingStart) || !(P.ingEingezahlt > 0)) return null;
+  const b0 = ymi(S[0].monat), s0 = ymi(P.ingStart), n0 = b0 - s0;
+  if (n0 <= 0) return null;
+  const a0 = P.ingEingezahlt / n0, a1 = P.ingSparplan || 0;
+  return S.map(s => {
+    const m = ymi(s.monat), paid = P.ingEingezahlt + (m - b0) * a1;
+    const f = r => { let v = 0; for (let i = s0; i < m; i++) v += (i < b0 ? a0 : a1) * Math.pow(1 + r, (m - i) / 12); return v; };
+    let lo = -0.95, hi = 5;
+    for (let n = 0; n < 60; n++) { const mid = (lo + hi) / 2; if (f(mid) < s.ing) lo = mid; else hi = mid; }
+    return { m: m, paid: paid, wert: s.ing, gesamt: s.ing / paid - 1, pa: (lo + hi) / 2 };
+  });
+}
+
 /* ───────── Zustand des Tabs (nicht gespeichert) ───────── */
 let wi = { r: 0, extra: 0, baus: null };
 let view = null;
@@ -134,6 +148,7 @@ const FIELDS = [
   ['grossZins', 'Kredit groß – Sollzins % p.a.'], ['grossEnde', 'Kredit groß – Zinsbindungsende', 'month'],
   ['einstand', 'Wertpapiere – Einstand im Monat des ersten Stands (€)'], ['trQuartal', 'TR – Einzahlung pro Quartal, Feb/Mai/Aug/Nov (€)'],
   ['trSparplan', 'TR – Sparpläne pro Monat aus Cash (€)'], ['ingSparplan', 'ING – Sparpläne pro Monat (€)'],
+  ['ingStart', 'ING – Sparplanstart', 'month'], ['ingEingezahlt', 'ING – eingezahlt bis zum Monat des ersten Stands (€)'],
   ['cashZins', 'Zins auf Cash % p.a.'], ['steuer', 'Steuerabschlag auf Kursgewinne %'],
   ['bausparerBetrag', 'Bausparer – Auszahlungsbetrag (€, 0 = ohne)'], ['bausparerMonat', 'Bausparer – Auszahlungsmonat', 'month'],
   ['bausparerFrist', 'Bausparer – Kündigungsfrist (Monate)'], ['tag', 'Stände eintragen ab dem (Tag im Monat)'],
@@ -225,6 +240,14 @@ function update() {
     '<div class="kr-card" style="flex:1 1 260px"><h3 class="kr-h">Kredit groß</h3>' + kv('Restschuld heute', eur(cur.gNow)) + kv('Restschuld am Stichtag', eur(cur.endG)) + kv('Zinsbindungsende', mmY(cur.eG)) + kv('Beide ablösbar ab', mOr(cur.firstB)) + kv('Spätestens sichern ab', mmY(gl.gG)) + '</div>' +
     '<div class="kr-card kr-todo" style="flex:2 1 400px;background:var(--bg-subtle)"><h3 class="kr-h">Was jetzt zu tun ist</h3>' + todo.map(t => '<div>' + t + '</div>').join('') + '</div>';
 
+  const ip = ingPerf(P, S), ie = $('kr-ing'), pc = v => (v >= 0 ? '+' : '−') + (Math.abs(v) * 100).toFixed(1).replace('.', ',') + ' %';
+  if (ie && !ip) ie.innerHTML = '<div class="kr-sub">Für die Rendite in den Einstellungen den ING-Sparplanstart und den bis zum ersten Stand eingezahlten Betrag eintragen.</div>';
+  if (ie && ip) { const l = ip[ip.length - 1];
+    ie.innerHTML = '<div style="font-weight:700;margin-bottom:.6rem">Gesamtrendite ' + pc(l.gesamt) + ' · Rendite p.a. ' + pc(l.pa) + ' · eingezahlt ' + eur(l.paid) + ', Depotwert ' + eur(l.wert) + ' (Stand ' + mmY(l.m) + ')</div>' +
+      '<div class="kr-scroll"><table class="kr-table"><thead><tr><th>Monat</th><th>Eingezahlt</th><th>Depotwert</th><th>Gewinn</th><th>Gesamtrendite</th><th>Rendite p.a.</th></tr></thead><tbody>' +
+      ip.slice(-12).reverse().map(x => '<tr><td>' + mmY(x.m) + '</td><td class="kr-num">' + eur(x.paid) + '</td><td class="kr-num">' + eur(x.wert) + '</td><td class="kr-num">' + (x.wert >= x.paid ? '+' : '−') + eur(Math.abs(x.wert - x.paid)) + '</td><td class="kr-num">' + pc(x.gesamt) + '</td><td class="kr-num">' + pc(x.pa) + '</td></tr>').join('') + '</tbody></table></div>' +
+      '<div class="kr-sub" style="margin-top:.6rem">Rendite p.a. berücksichtigt, wann jede Sparrate eingezahlt wurde: der Zinssatz, den ein Sparkonto mit denselben Einzahlungen gebraucht hätte, um auf den Depotwert zu kommen. Gesamtrendite = Depotwert ÷ Einzahlungen − 1. Gerechnet mit gleichmäßigen Monatsraten ab Sparplanstart; Umschichtungen im Depot zählen nicht als Einzahlung.</div>'; }
+
   $('kr-rules').innerHTML = ['<strong>Sichern, sobald gedeckt – spätestens ' + (P.vorlauf || 24) + ' Monate vor Stichtag.</strong>',
     '1 · Trigger: Ihr könntet den Kredit heute ablösen (Vermögen netto ≥ aktuelle Restschuld). Aktion: Restschuld zum Stichtag aus Aktien in Cash oder Geldmarkt drehen. Cash ' + dec(P.cashZins || 0) + ' % gegen Kredit ' + dec(P.kleinZins) + ' %: Gesichertes Geld verdient mehr, als der Kredit kostet.',
     '2 · Nicht alles an einem Tag: Tranchen über Dezember und Januar (zwei Pauschbeträge), gewinnarme Positionen zuerst.',
@@ -261,6 +284,7 @@ function renderKredit() {
     '<div class="kr-card"><h3 class="kr-h">Fünf Renditeszenarien</h3><div class="kr-scroll" id="kr-scen"></div><div class="kr-sub" style="margin-top:.6rem">Netto jeweils vor der Ablösung des im Monat fälligen Kredits, Steuerabschlag auf Kursgewinne abgezogen. Die Szenarien übernehmen Zusatz-Sparrate und Bausparer aus „Was wäre, wenn“.</div></div>' +
     '<div class="kr-row" id="kr-cards"></div>' +
     '<div class="kr-card"><h3 class="kr-h">Stände eintragen</h3>' + standForm(iym(last + 1)) + '<div class="kr-scroll" style="margin-top:1rem"><table class="kr-table"><thead><tr><th>Monat</th><th>Cash</th><th>TR Portfolio</th><th>ING Depot</th><th>Summe</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div></div>' +
+    '<div class="kr-card"><h3 class="kr-h">ING-Depot – Rendite seit Start</h3><div id="kr-ing"></div></div>' +
     '<details class="kr-card"><summary>Regel fürs Sichern</summary><div id="kr-rules"></div></details>' +
     '<details class="kr-card"><summary>Einstellungen</summary>' + paramsForm(P) + '</details></div>';
   update();
@@ -326,6 +350,6 @@ function init() {
   renderKredit();
 }
 
-if (typeof window !== 'undefined') { window.renderKredit = renderKredit; window.__krModel = { sim: sim, breakEven: breakEven, glide: glide }; }
+if (typeof window !== 'undefined') { window.renderKredit = renderKredit; window.__krModel = { sim: sim, breakEven: breakEven, glide: glide, ingPerf: ingPerf }; }
 if (typeof document !== 'undefined') { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init(); }
 })();
