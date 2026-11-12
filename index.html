@@ -1139,6 +1139,7 @@ footer {
     <button class="tab-btn" data-tab="versicherungen">Versicherungen <span class="count" id="cnt-versicherungen">0</span></button>
     <button class="tab-btn" data-tab="konten">Konto-Verteilung</button>
     <button class="tab-btn" data-tab="freistellungen">Freistellungsaufträge <span class="count" id="cnt-freistellungen">0</span></button>
+    <button class="tab-btn" data-tab="kredit">Kreditablösung</button>
   </div>
 
   <!-- Einnahmen -->
@@ -1342,6 +1343,9 @@ footer {
     <div class="fsa-card" id="fsa-section">
       <div id="fsa-body"></div>
     </div>
+  </div>
+  <div class="tab-content" data-content="kredit">
+    <div id="kredit-root"></div>
   </div>
 </section>
 
@@ -1670,6 +1674,7 @@ function render() {
   renderVersicherungen();
   renderKonten(c.kontoFlow);
   renderFreistellungen();
+  if (typeof renderKredit === 'function') renderKredit();
 }
 
 // ─────────────  FREISTELLUNGSAUFTRÄGE  ─────────────
@@ -3580,5 +3585,6 @@ tryPassAuthGate();
 // ─────────────  INIT  ─────────────
 render();
 </script>
+<script src="kredit.js"></script>
 </body>
 </html>
