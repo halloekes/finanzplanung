@@ -117,8 +117,8 @@ const CSS = `
 .kr-big{font-family:'JetBrains Mono',monospace;font-size:1.9rem;font-weight:500}
 .kr-sub{font-size:.82rem;color:var(--ink-muted)}
 .kr-h{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:600;margin:0 0 .6rem}
-.kr-num{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
-.kr-kv{display:flex;justify-content:space-between;gap:.75rem;padding:.2rem 0}
+.kr-num{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+.kr-kv{display:flex;justify-content:space-between;align-items:baseline;gap:.75rem;padding:.2rem 0}
 .kr-kv span:first-child{color:var(--ink-muted)}
 .kr-ok{color:var(--accent)}.kr-bad{color:var(--warning)}
 .kr-banner{background:var(--warning);color:#fff;font-weight:700;padding:.7rem 1rem;border-radius:var(--radius)}
