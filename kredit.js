@@ -300,7 +300,7 @@ function renderKredit() {
     '<div class="kr-card"><h3 class="kr-h">Fünf Renditeszenarien</h3><div class="kr-scroll" id="kr-scen"></div><div class="kr-sub" style="margin-top:.6rem">Netto jeweils vor der Ablösung des im Monat fälligen Kredits, Steuerabschlag auf Kursgewinne abgezogen. Die Szenarien übernehmen Zusatz-Sparrate und Bausparer aus „Was wäre, wenn“.</div></div>' +
     '<div class="kr-row" id="kr-cards"></div>' +
     '<div class="kr-card"><h3 class="kr-h">Stände eintragen</h3>' + standForm(iym(last + 1)) + '<div class="kr-scroll" style="margin-top:1rem"><table class="kr-table"><thead><tr><th>Monat</th><th>Cash</th><th>TR Portfolio</th><th>ING Depot</th><th>Summe</th><th>Depotkauf</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div></div>' +
-    '<div class="kr-card"><h3 class="kr-h">Geplante Ein- und Auszahlungen aufs Tagesgeld</h3><div class="kr-form">' +
+    '<div class="kr-card"><h3 class="kr-h">Geplante Ein- und Auszahlungen Trade Republic Tagesgeld</h3><div class="kr-form">' +
     '<label class="kr-f">Monat<input type="month" id="kr-b-m" value="' + iym(last + 1) + '"></label>' +
     '<label class="kr-f">Betrag (€, Auszahlung mit Minus)<input type="text" inputmode="text" id="kr-b-v"></label>' +
     '<label class="kr-f" style="flex:2 1 260px">Notiz<input type="text" id="kr-b-n" maxlength="80" style="font-family:inherit"></label>' +
