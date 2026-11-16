@@ -174,9 +174,10 @@ function standForm(defMonth) {
     '<label class="kr-f">Cash für die Ablösung (€)<input type="text" inputmode="decimal" id="kr-s-c"></label>' +
     '<label class="kr-f">TR Portfolio ohne Geldmarkt (€)<input type="text" inputmode="decimal" id="kr-s-t"></label>' +
     '<label class="kr-f">ING Depot (€)<input type="text" inputmode="decimal" id="kr-s-i"></label>' +
-    '<label class="kr-f">Einmaliger Depotkauf TR seit dem letzten Stand (€, optional)<input type="text" inputmode="decimal" id="kr-s-kt"></label>' +
-    '<label class="kr-f">Einmaliger Depotkauf ING seit dem letzten Stand (€, optional)<input type="text" inputmode="decimal" id="kr-s-ki"></label>' +
-    '<button class="btn" type="button" data-kr="stand">Stand übernehmen</button></div>';
+    '<label class="kr-f">Depotkauf TR, einmalig (€)<input type="text" inputmode="decimal" id="kr-s-kt"></label>' +
+    '<label class="kr-f">Depotkauf ING, einmalig (€)<input type="text" inputmode="decimal" id="kr-s-ki"></label>' +
+    '<button class="btn" type="button" data-kr="stand">Stand übernehmen</button></div>' +
+    '<div class="kr-sub" style="margin-top:.6rem">Depotkauf nur ausfüllen, wenn seit dem letzten Stand zusätzlich zu den Sparplänen gekauft wurde. Der Betrag erhöht den Einstand ab diesem Monat.</div>';
 }
 
 function chart(cur, ref, S) {
