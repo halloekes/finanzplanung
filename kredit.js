@@ -33,6 +33,9 @@ function sim(P, S, o) {
   const spar = (P.trSparplan || 0) + (P.ingSparplan || 0);
   const bw = {}; BW().forEach(b => { if (isYm(b.monat)) bw[ymi(b.monat)] = (bw[ymi(b.monat)] || 0) + b.betrag; });
   let cash = S[0].cash, wp = S[0].tr + S[0].ing, ein = P.einstand, bk = P.kleinSaldo, bg = P.grossSaldo, kum = 0, pK = false, pG = false;
+  const kor = {}; KOR().forEach(c => { if (isYm(c.monat)) kor[c.kredit + ymi(c.monat)] = c.saldo; });
+  if (kor['klein' + b0] !== undefined) bk = kor['klein' + b0];
+  if (kor['gross' + b0] !== undefined) bg = kor['gross' + b0];
   const tax = () => tx * Math.max(0, wp - ein);
   const R = { b0: b0, last: last, eK: eK, eG: eG, bM: bM, net: [cash + wp - tax()], rest: [bk + bg], cash: [cash],
     firstK: null, firstB: null, endK: 0, endG: 0, netK: 0, netG: 0, ueber: 0, netNow: cash + wp - tax(), cashNow: cash, kNow: bk, gNow: bg };
@@ -46,6 +49,8 @@ function sim(P, S, o) {
     if (ist[m]) { cash = ist[m].cash; wp = ist[m].tr + ist[m].ing; ein += (ist[m].kaufTr || 0) + (ist[m].kaufIng || 0); }
     if (!pK) bk = bk * (1 + iK) - P.kleinRate;
     if (!pG) bg = bg * (1 + iG) - P.grossRate;
+    if (!pK && kor['klein' + m] !== undefined) bk = kor['klein' + m];
+    if (!pG && kor['gross' + m] !== undefined) bg = kor['gross' + m];
     const before = cash + wp - tax() - kum;
     if (m === last) { R.netNow = before; R.cashNow = cash; R.kNow = bk; R.gNow = bg; }
     if (fut && R.firstK === null && !pK && before >= bk) R.firstK = m;
@@ -102,6 +107,7 @@ let view = null;
 
 function K() { return (typeof state !== 'undefined' && state && state.kredit) || null; }
 function BW() { const k = K(); return k && Array.isArray(k.bewegungen) ? k.bewegungen : []; }
+function KOR() { const k = K(); return k && Array.isArray(k.korrekturen) ? k.korrekturen : []; }
 function ready() { const k = K(); return !!(k && k.params && Array.isArray(k.staende) && k.staende.length); }
 function bausOn(P) { return wi.baus === null ? P.bausparerBetrag > 0 : wi.baus; }
 function toast(m) { if (typeof showToast === 'function') showToast(m); }
@@ -130,6 +136,8 @@ const CSS = `
 .kr-table th{text-align:right;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-muted);padding:.4rem .5rem;border-bottom:1px solid var(--line-strong)}
 .kr-table th:first-child,.kr-table td:first-child{text-align:left}
 .kr-table td{text-align:right;padding:.5rem;border-bottom:1px solid var(--line)}
+.kr-table tr.kr-cur td{background:var(--accent-soft)}
+.kr-table tr.kr-cur td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 .kr-pill{display:inline-block;padding:.15rem .6rem;border-radius:999px;font-weight:700;font-size:.78rem}
 .kr-pill.ok{background:var(--accent-soft);color:var(--accent)}.kr-pill.bad{background:var(--warning-soft);color:var(--warning)}
 .kr-ctl label{display:flex;justify-content:space-between;font-weight:600;font-size:.9rem;gap:.75rem}
@@ -206,6 +214,27 @@ function chart(cur, ref, S) {
 function kv(a, b, cls) { return '<div class="kr-kv"><span>' + a + '</span><span class="kr-num ' + (cls || '') + '">' + b + '</span></div>'; }
 function mOr(m) { return m === null ? 'nicht absehbar' : lab(m); }
 
+function korBox(kredit, nowM) {
+  const L = KOR().filter(c => c.kredit === kredit).sort((a, b) => ymi(a.monat) - ymi(b.monat));
+  return '<details' + (L.length ? ' open' : '') + ' style="margin-top:.7rem;border-top:1px solid var(--line);padding-top:.6rem"><summary style="cursor:pointer;font-weight:600;font-size:.88rem">Restschuld korrigieren</summary>' +
+    '<div class="kr-form" style="margin-top:.6rem"><label class="kr-f">Stand am 1. des Monats<input type="month" data-km="' + kredit + '" value="' + iym(nowM) + '"></label>' +
+    '<label class="kr-f">Restschuld laut Bank (€)<input type="text" inputmode="decimal" data-kv="' + kredit + '"></label>' +
+    '<button class="btn btn-secondary" type="button" data-kr="kor" data-k="' + kredit + '">Übernehmen</button></div>' +
+    '<div class="kr-sub" style="margin-top:.5rem">Ab diesem Monat rechnet der Tab mit Zins und Rate weiter, jeweils zum Monatsersten.</div>' +
+    L.map(c => '<div class="kr-kv" style="margin-top:.3rem"><span>Korrigiert zum 01.' + mmY(ymi(c.monat)).replace('/', '.') + '</span><span class="kr-num">' + eur(c.saldo) + ' <button type="button" class="kr-x" data-kr="kordel" data-k="' + kredit + '" data-m="' + esc(c.monat) + '" aria-label="Korrektur löschen">×</button></span></div>').join('') + '</details>';
+}
+
+function istRendite(P, S) {
+  if (S.length < 2) return null;
+  const b0 = ymi(S[0].monat), last = ymi(S[S.length - 1].monat), ist = {};
+  S.forEach(s => { ist[ymi(s.monat)] = s; });
+  const spar = (P.trSparplan || 0) + (P.ingSparplan || 0), target = S[S.length - 1].tr + S[S.length - 1].ing;
+  const f = r => { let wp = S[0].tr + S[0].ing; for (let m = b0 + 1; m <= last; m++) wp = wp * Math.pow(1 + r, 1 / 12) + spar + (ist[m] ? (ist[m].kaufTr || 0) + (ist[m].kaufIng || 0) : 0); return wp; };
+  let lo = -0.99, hi = 10;
+  for (let n = 0; n < 60; n++) { const mid = (lo + hi) / 2; if (f(mid) < target) lo = mid; else hi = mid; }
+  return { r: (lo + hi) / 2, n: last - b0, b0: b0 };
+}
+
 function update() {
   const k = K(), P = k.params, S = k.staende, on = bausOn(P);
   const o = { r: wi.r / 100, extra: wi.extra, baus: on };
@@ -232,9 +261,13 @@ function update() {
   $('kr-x-l').textContent = wi.extra ? '+' + wi.extra + ' €' : '0 €';
   $('kr-wi').innerHTML = kv('Klein ablösbar ab', mOr(cur.firstK)) + kv('Beide ablösbar ab', mOr(cur.firstB)) + kv('Überschuss nach beiden Ablösungen', (cur.ueber >= 0 ? '+' : '−') + eur(Math.abs(cur.ueber)), cur.ueber >= 0 ? 'kr-ok' : 'kr-bad');
 
+  const tj = istRendite(P, S); let near = -1;
+  if (tj) { let dmin = 1e9; SCEN.forEach((s, i) => { const x = Math.abs(s[1] / 100 - tj.r); if (x < dmin) { dmin = x; near = i; } }); }
+  const sc = $('kr-scen-cur');
+  if (sc) sc.textContent = tj ? 'Hervorgehoben: „' + SCEN[near][0] + '“ liegt am nächsten an eurem bisherigen Kurs. Das Depot hat seit ' + mmY(tj.b0) + ' (' + tj.n + (tj.n === 1 ? ' Monat' : ' Monate') + ') umgerechnet ' + (tj.r >= 0 ? '+' : '−') + (Math.abs(tj.r) * 100).toFixed(1).replace('.', ',') + ' % pro Jahr gebracht.' + (tj.n < 12 ? ' Über so kurze Zeit schwankt dieser Wert stark.' : '') : 'Sobald zwei Stände eingetragen sind, wird hier das Szenario markiert, das eurem bisherigen Kurs am nächsten kommt.';
   $('kr-scen').innerHTML = '<table class="kr-table"><thead><tr><th>Szenario</th><th>Rendite</th><th>Netto ' + mmY(cur.eK) + '</th><th>Netto ' + mmY(cur.eG) + '</th><th>Überschuss</th><th>Ampel</th></tr></thead><tbody>' +
-    SCEN.map(s => { const x = sim(P, S, { r: s[1] / 100, extra: wi.extra, baus: on }), good = x.ueber >= 0;
-      return '<tr><td><strong>' + s[0] + '</strong></td><td class="kr-num">' + pct(s[1]) + '</td><td class="kr-num">' + eur(x.netK) + '</td><td class="kr-num">' + eur(x.netG) + '</td><td class="kr-num">' + (good ? '+' : '−') + eur(Math.abs(x.ueber)) + '</td><td><span class="kr-pill ' + (good ? 'ok">reicht' : 'bad">Lücke') + '</span></td></tr>'; }).join('') + '</tbody></table>';
+    SCEN.map((s, i) => { const x = sim(P, S, { r: s[1] / 100, extra: wi.extra, baus: on }), good = x.ueber >= 0;
+      return '<tr' + (i === near ? ' class="kr-cur"' : '') + '><td><strong>' + s[0] + '</strong>' + (i === near ? ' <span class="kr-pill" style="background:var(--accent);color:#fff;margin-left:.4rem">aktueller Kurs</span>' : '') + '</td><td class="kr-num">' + pct(s[1]) + '</td><td class="kr-num">' + eur(x.netK) + '</td><td class="kr-num">' + eur(x.netG) + '</td><td class="kr-num">' + (good ? '+' : '−') + eur(Math.abs(x.ueber)) + '</td><td><span class="kr-pill ' + (good ? 'ok">reicht' : 'bad">Lücke') + '</span></td></tr>'; }).join('') + '</tbody></table>';
 
   const frist = P.bausparerFrist || 0, hasB = P.bausparerBetrag > 0 && isYm(P.bausparerMonat), kb = hasB ? ymi(P.bausparerMonat) - frist : 0;
   const todo = ['Am ' + tag + '. des Monats: Cash, TR Portfolio und ING eintragen.',
@@ -243,8 +276,8 @@ function update() {
   if (hasB) todo.push('Bausparer: Zuteilung und Bonuszins prüfen. Bei Einsatz bis ' + mmY(kb) + ' kündigen (noch ' + Math.max(0, kb - nowM) + ' Monate).');
   todo.push('Dezember: Verlustbescheinigung prüfen (bis 15.12.), FSA-Verteilung fürs Folgejahr.');
   $('kr-cards').innerHTML =
-    '<div class="kr-card" style="flex:1 1 260px"><h3 class="kr-h">Kredit klein</h3>' + kv('Restschuld heute', eur(cur.kNow)) + kv('Restschuld am Stichtag', eur(cur.endK)) + kv('Zinsbindungsende', mmY(cur.eK)) + kv('Ablösbar ab', mOr(cur.firstK)) + kv('Spätestens sichern ab', mmY(gl.gK)) + '</div>' +
-    '<div class="kr-card" style="flex:1 1 260px"><h3 class="kr-h">Kredit groß</h3>' + kv('Restschuld heute', eur(cur.gNow)) + kv('Restschuld am Stichtag', eur(cur.endG)) + kv('Zinsbindungsende', mmY(cur.eG)) + kv('Beide ablösbar ab', mOr(cur.firstB)) + kv('Spätestens sichern ab', mmY(gl.gG)) + '</div>' +
+    '<div class="kr-card" style="flex:1 1 260px"><h3 class="kr-h">Kredit klein</h3>' + kv('Restschuld heute', eur(cur.kNow)) + kv('Restschuld am Stichtag', eur(cur.endK)) + kv('Zinsbindungsende', mmY(cur.eK)) + kv('Ablösbar ab', mOr(cur.firstK)) + kv('Spätestens sichern ab', mmY(gl.gK)) + korBox('klein', nowM) + '</div>' +
+    '<div class="kr-card" style="flex:1 1 260px"><h3 class="kr-h">Kredit groß</h3>' + kv('Restschuld heute', eur(cur.gNow)) + kv('Restschuld am Stichtag', eur(cur.endG)) + kv('Zinsbindungsende', mmY(cur.eG)) + kv('Beide ablösbar ab', mOr(cur.firstB)) + kv('Spätestens sichern ab', mmY(gl.gG)) + korBox('gross', nowM) + '</div>' +
     '<div class="kr-card kr-todo" style="flex:2 1 400px;background:var(--bg-subtle)"><h3 class="kr-h">Was jetzt zu tun ist</h3>' + todo.map(t => '<div>' + t + '</div>').join('') + '</div>';
 
   const ip = ingPerf(P, S), ie = $('kr-ing'), pc = v => (v >= 0 ? '+' : '−') + (Math.abs(v) * 100).toFixed(1).replace('.', ',') + ' %';
@@ -297,7 +330,7 @@ function renderKredit() {
     '<div><label for="kr-x">Zusätzlich sparen pro Monat <span class="kr-num" id="kr-x-l"></span></label><input type="range" id="kr-x" min="0" max="1000" step="50" value="' + wi.extra + '"></div>' +
     (P.bausparerBetrag > 0 ? '<label style="justify-content:flex-start;align-items:center;cursor:pointer"><input type="checkbox" id="kr-b"' + (bausOn(P) ? ' checked' : '') + '> Bausparer einsetzen (' + eur(P.bausparerBetrag) + ' in ' + (isYm(P.bausparerMonat) ? mmY(ymi(P.bausparerMonat)) : '?') + ')</label>' : '') +
     '<div id="kr-wi" style="border-top:1px solid var(--line);padding-top:.7rem"></div><button class="btn btn-secondary" type="button" data-kr="reset">Zurück zum Plan</button></div></div>' +
-    '<div class="kr-card"><h3 class="kr-h">Fünf Renditeszenarien</h3><div class="kr-scroll" id="kr-scen"></div><div class="kr-sub" style="margin-top:.6rem">Netto jeweils vor der Ablösung des im Monat fälligen Kredits, Steuerabschlag auf Kursgewinne abgezogen. Die Szenarien übernehmen Zusatz-Sparrate und Bausparer aus „Was wäre, wenn“.</div></div>' +
+    '<div class="kr-card"><h3 class="kr-h">Fünf Renditeszenarien</h3><div class="kr-scroll" id="kr-scen"></div><div class="kr-sub" style="margin-top:.6rem">Netto jeweils vor der Ablösung des im Monat fälligen Kredits, Steuerabschlag auf Kursgewinne abgezogen. Die Szenarien übernehmen Zusatz-Sparrate und Bausparer aus „Was wäre, wenn“.</div><div class="kr-sub" id="kr-scen-cur" style="margin-top:.4rem"></div></div>' +
     '<div class="kr-row" id="kr-cards"></div>' +
     '<div class="kr-card"><h3 class="kr-h">Stände eintragen</h3>' + standForm(iym(last + 1)) + '<div class="kr-scroll" style="margin-top:1rem"><table class="kr-table"><thead><tr><th>Monat</th><th>Cash</th><th>TR Portfolio</th><th>ING Depot</th><th>Summe</th><th>Depotkauf</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div></div>' +
     '<div class="kr-card"><h3 class="kr-h">Geplante Ein- und Auszahlungen Trade Republic Tagesgeld</h3><div class="kr-form">' +
@@ -346,6 +379,18 @@ function saveStand(root) {
   commit(); toast('Stand ' + mmY(ymi(m)) + ' gespeichert');
 }
 
+function saveKor(root, kredit) {
+  const m = root.querySelector('[data-km="' + kredit + '"]').value, v = num(root.querySelector('[data-kv="' + kredit + '"]').value);
+  const k = state.kredit, b0 = ymi(k.staende[0].monat), e = ymi(kredit === 'klein' ? k.params.kleinEnde : k.params.grossEnde);
+  if (!isYm(m) || v === null || v < 0) { toast('Bitte Monat und Restschuld eintragen'); return; }
+  if (ymi(m) < b0 || ymi(m) > e) { toast('Der Monat muss zwischen erstem Stand und Zinsbindungsende liegen'); return; }
+  if (typeof pushHistory === 'function') pushHistory();
+  if (!Array.isArray(k.korrekturen)) k.korrekturen = [];
+  const at = k.korrekturen.findIndex(c => c.kredit === kredit && c.monat === m), rec = { kredit: kredit, monat: m, saldo: v };
+  if (at >= 0) k.korrekturen[at] = rec; else k.korrekturen.push(rec);
+  commit(); toast('Restschuld ' + (kredit === 'klein' ? 'klein' : 'groß') + ' zum 01.' + mmY(ymi(m)).replace('/', '.') + ' korrigiert');
+}
+
 function saveBw(root) {
   const m = root.querySelector('#kr-b-m').value, v = num(root.querySelector('#kr-b-v').value), n = root.querySelector('#kr-b-n').value.trim();
   if (!isYm(m) || v === null || v === 0) { toast('Bitte Monat und Betrag eintragen (Auszahlung mit Minus)'); return; }
@@ -371,6 +416,11 @@ function init() {
     else if (a === 'params') saveParams(root);
     else if (a === 'stand') saveStand(root);
     else if (a === 'bw') saveBw(root);
+    else if (a === 'kor') saveKor(root, b.dataset.k);
+    else if (a === 'kordel') {
+      const L = KOR(), at = L.findIndex(c => c.kredit === b.dataset.k && c.monat === b.dataset.m);
+      if (at >= 0) { if (typeof pushHistory === 'function') pushHistory(); L.splice(at, 1); commit(); }
+    }
     else if (a === 'bwdel') {
       const L = BW(), at = L.findIndex(x => String(x.id) === b.dataset.id);
       if (at >= 0) { if (typeof pushHistory === 'function') pushHistory(); L.splice(at, 1); commit(); }
@@ -390,6 +440,6 @@ function init() {
   renderKredit();
 }
 
-if (typeof window !== 'undefined') { window.renderKredit = renderKredit; window.__krModel = { sim: sim, breakEven: breakEven, glide: glide, ingPerf: ingPerf }; }
+if (typeof window !== 'undefined') { window.renderKredit = renderKredit; window.__krModel = { sim: sim, breakEven: breakEven, glide: glide, ingPerf: ingPerf, istRendite: istRendite }; }
 if (typeof document !== 'undefined') { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init(); }
 })();
