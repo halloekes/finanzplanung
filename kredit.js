@@ -41,7 +41,7 @@ function sim(P, S, o) {
     if (m === bM) cash += P.bausparerBetrag;
     const add = spar + (fut ? o.extra : 0);
     wp = wp * Math.pow(1 + o.r, 1 / 12) + add; ein += add;
-    if (ist[m]) { cash = ist[m].cash; wp = ist[m].tr + ist[m].ing; }
+    if (ist[m]) { cash = ist[m].cash; wp = ist[m].tr + ist[m].ing; ein += (ist[m].kaufTr || 0) + (ist[m].kaufIng || 0); }
     if (!pK) bk = bk * (1 + iK) - P.kleinRate;
     if (!pG) bg = bg * (1 + iG) - P.grossRate;
     const before = cash + wp - tax() - kum;
@@ -85,8 +85,9 @@ function ingPerf(P, S) {
   if (n0 <= 0) return null;
   const a0 = P.ingEingezahlt / n0, a1 = P.ingSparplan || 0;
   return S.map(s => {
-    const m = ymi(s.monat), paid = P.ingEingezahlt + (m - b0) * a1;
-    const f = r => { let v = 0; for (let i = s0; i < m; i++) v += (i < b0 ? a0 : a1) * Math.pow(1 + r, (m - i) / 12); return v; };
+    const m = ymi(s.monat), ks = S.filter(k => k.kaufIng > 0 && ymi(k.monat) > b0 && ymi(k.monat) <= m);
+    const paid = P.ingEingezahlt + (m - b0) * a1 + ks.reduce((a, k) => a + k.kaufIng, 0);
+    const f = r => { let v = 0; for (let i = s0; i < m; i++) v += (i < b0 ? a0 : a1) * Math.pow(1 + r, (m - i) / 12); ks.forEach(k => { v += k.kaufIng * Math.pow(1 + r, (m - ymi(k.monat) + 1) / 12); }); return v; };
     let lo = -0.95, hi = 5;
     for (let n = 0; n < 60; n++) { const mid = (lo + hi) / 2; if (f(mid) < s.ing) lo = mid; else hi = mid; }
     return { m: m, paid: paid, wert: s.ing, gesamt: s.ing / paid - 1, pa: (lo + hi) / 2 };
@@ -170,6 +171,8 @@ function standForm(defMonth) {
     '<label class="kr-f">Cash für die Ablösung (€)<input type="text" inputmode="decimal" id="kr-s-c"></label>' +
     '<label class="kr-f">TR Portfolio ohne Geldmarkt (€)<input type="text" inputmode="decimal" id="kr-s-t"></label>' +
     '<label class="kr-f">ING Depot (€)<input type="text" inputmode="decimal" id="kr-s-i"></label>' +
+    '<label class="kr-f">Einmaliger Depotkauf TR seit dem letzten Stand (€, optional)<input type="text" inputmode="decimal" id="kr-s-kt"></label>' +
+    '<label class="kr-f">Einmaliger Depotkauf ING seit dem letzten Stand (€, optional)<input type="text" inputmode="decimal" id="kr-s-ki"></label>' +
     '<button class="btn" type="button" data-kr="stand">Stand übernehmen</button></div>';
 }
 
@@ -270,7 +273,7 @@ function renderKredit() {
     return;
   }
   const P = k.params, S = k.staende, last = ymi(S[S.length - 1].monat);
-  const rows = S.slice(-8).reverse().map(s => '<tr><td>' + mmY(ymi(s.monat)) + '</td><td class="kr-num">' + eur(s.cash) + '</td><td class="kr-num">' + eur(s.tr) + '</td><td class="kr-num">' + eur(s.ing) + '</td><td class="kr-num">' + eur(s.cash + s.tr + s.ing) + '</td><td>' +
+  const rows = S.slice(-8).reverse().map(s => '<tr><td>' + mmY(ymi(s.monat)) + '</td><td class="kr-num">' + eur(s.cash) + '</td><td class="kr-num">' + eur(s.tr) + '</td><td class="kr-num">' + eur(s.ing) + '</td><td class="kr-num">' + eur(s.cash + s.tr + s.ing) + '</td><td class="kr-num">' + ((s.kaufTr || s.kaufIng) ? eur((s.kaufTr || 0) + (s.kaufIng || 0)) : '–') + '</td><td>' +
     (s.monat === S[0].monat ? '<span class="kr-sub">Basis</span>' : '<button type="button" class="kr-x" data-kr="del" data-m="' + esc(s.monat) + '" aria-label="Stand ' + mmY(ymi(s.monat)) + ' löschen">×</button>') + '</td></tr>').join('');
   root.innerHTML = '<div class="kr-wrap">' +
     '<div class="section-desc" style="margin:0" id="kr-status"></div><div id="kr-banner"></div>' +
@@ -283,7 +286,7 @@ function renderKredit() {
     '<div id="kr-wi" style="border-top:1px solid var(--line);padding-top:.7rem"></div><button class="btn btn-secondary" type="button" data-kr="reset">Zurück zum Plan</button></div></div>' +
     '<div class="kr-card"><h3 class="kr-h">Fünf Renditeszenarien</h3><div class="kr-scroll" id="kr-scen"></div><div class="kr-sub" style="margin-top:.6rem">Netto jeweils vor der Ablösung des im Monat fälligen Kredits, Steuerabschlag auf Kursgewinne abgezogen. Die Szenarien übernehmen Zusatz-Sparrate und Bausparer aus „Was wäre, wenn“.</div></div>' +
     '<div class="kr-row" id="kr-cards"></div>' +
-    '<div class="kr-card"><h3 class="kr-h">Stände eintragen</h3>' + standForm(iym(last + 1)) + '<div class="kr-scroll" style="margin-top:1rem"><table class="kr-table"><thead><tr><th>Monat</th><th>Cash</th><th>TR Portfolio</th><th>ING Depot</th><th>Summe</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div></div>' +
+    '<div class="kr-card"><h3 class="kr-h">Stände eintragen</h3>' + standForm(iym(last + 1)) + '<div class="kr-scroll" style="margin-top:1rem"><table class="kr-table"><thead><tr><th>Monat</th><th>Cash</th><th>TR Portfolio</th><th>ING Depot</th><th>Summe</th><th>Depotkauf</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div></div>' +
     '<div class="kr-card"><h3 class="kr-h">ING-Depot – Rendite seit Start</h3><div id="kr-ing"></div></div>' +
     '<details class="kr-card"><summary>Regel fürs Sichern</summary><div id="kr-rules"></div></details>' +
     '<details class="kr-card"><summary>Einstellungen</summary>' + paramsForm(P) + '</details></div>';
@@ -313,8 +316,12 @@ function saveStand(root) {
   if (!state.kredit) state.kredit = { params: null, staende: [] };
   const S = state.kredit.staende || (state.kredit.staende = []);
   if (S.length && ymi(m) < ymi(S[0].monat)) { toast('Der Monat liegt vor dem ersten Stand'); return; }
+  const kt = num(g('kr-s-kt').value) || 0, ki = num(g('kr-s-ki').value) || 0, base = !S.length || m === S[0].monat;
+  if (kt < 0 || ki < 0) { toast('Depotkäufe bitte als positive Beträge eintragen'); return; }
   if (typeof pushHistory === 'function') pushHistory();
   const at = S.findIndex(s => s.monat === m), rec = { monat: m, cash: c, tr: t, ing: i };
+  if (!base && kt > 0) rec.kaufTr = kt;
+  if (!base && ki > 0) rec.kaufIng = ki;
   if (at >= 0) S[at] = rec; else S.push(rec);
   S.sort((a, b) => ymi(a.monat) - ymi(b.monat));
   commit(); toast('Stand ' + mmY(ymi(m)) + ' gespeichert');
