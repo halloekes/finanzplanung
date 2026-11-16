@@ -138,6 +138,7 @@ const CSS = `
 .kr-table td{text-align:right;padding:.5rem;border-bottom:1px solid var(--line)}
 .kr-table tr.kr-cur td{background:var(--accent-soft)}
 .kr-table tr.kr-cur td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+.kr-d{display:inline-block;min-width:3.9rem;margin-left:.4rem;font-size:.78rem;font-weight:600;text-align:right}
 .kr-pill{display:inline-block;padding:.15rem .6rem;border-radius:999px;font-weight:700;font-size:.78rem}
 .kr-pill.ok{background:var(--accent-soft);color:var(--accent)}.kr-pill.bad{background:var(--warning-soft);color:var(--warning)}
 .kr-ctl label{display:flex;justify-content:space-between;font-weight:600;font-size:.9rem;gap:.75rem}
@@ -319,6 +320,12 @@ function update() {
   ].filter(Boolean).map(t => '<div style="padding:.25rem 0">' + t + '</div>').join('');
 }
 
+function dl(cur, prev) {
+  if (!(prev > 0)) return '<span class="kr-d"></span>';
+  const d = cur / prev - 1;
+  return '<span class="kr-d ' + (d >= 0 ? 'kr-ok' : 'kr-bad') + '">' + (d >= 0 ? '+' : '−') + (Math.abs(d) * 100).toFixed(1).replace('.', ',') + ' %</span>';
+}
+
 function bwTable(last) {
   const L = BW().slice().sort((a, b) => ymi(a.monat) - ymi(b.monat));
   if (!L.length) return '';
@@ -340,8 +347,8 @@ function renderKredit() {
     return;
   }
   const P = k.params, S = k.staende, last = ymi(S[S.length - 1].monat);
-  const rows = S.slice(-8).reverse().map(s => '<tr><td>' + mmY(ymi(s.monat)) + '</td><td class="kr-num">' + eur(s.cash) + '</td><td class="kr-num">' + eur(s.tr) + '</td><td class="kr-num">' + eur(s.ing) + '</td><td class="kr-num">' + eur(s.cash + s.tr + s.ing) + '</td><td class="kr-num">' + ((s.kaufTr || s.kaufIng) ? eur((s.kaufTr || 0) + (s.kaufIng || 0)) : '–') + '</td><td>' +
-    (s.monat === S[0].monat ? '<span class="kr-sub">Basis</span>' : '<button type="button" class="kr-x" data-kr="del" data-m="' + esc(s.monat) + '" aria-label="Stand ' + mmY(ymi(s.monat)) + ' löschen">×</button>') + '</td></tr>').join('');
+  const rows = S.slice(-8).reverse().map(s => { const p = S[S.indexOf(s) - 1]; return '<tr><td>' + mmY(ymi(s.monat)) + '</td><td class="kr-num">' + eur(s.cash) + '</td><td class="kr-num">' + eur(s.tr) + dl(s.tr, p && p.tr) + '</td><td class="kr-num">' + eur(s.ing) + dl(s.ing, p && p.ing) + '</td><td class="kr-num">' + eur(s.cash + s.tr + s.ing) + dl(s.cash + s.tr + s.ing, p && p.cash + p.tr + p.ing) + '</td><td class="kr-num">' + ((s.kaufTr || s.kaufIng) ? eur((s.kaufTr || 0) + (s.kaufIng || 0)) : '–') + '</td><td>' +
+    (s.monat === S[0].monat ? '<span class="kr-sub">Basis</span>' : '<button type="button" class="kr-x" data-kr="del" data-m="' + esc(s.monat) + '" aria-label="Stand ' + mmY(ymi(s.monat)) + ' löschen">×</button>') + '</td></tr>'; }).join('');
   root.innerHTML = '<div class="kr-wrap">' +
     '<div class="section-desc" style="margin:0" id="kr-status"></div><div id="kr-banner"></div>' +
     '<div class="kr-row" id="kr-kpis"></div>' +
@@ -353,7 +360,7 @@ function renderKredit() {
     '<div id="kr-wi" style="border-top:1px solid var(--line);padding-top:.7rem"></div><button class="btn btn-secondary" type="button" data-kr="reset">Zurück zum Plan</button></div></div>' +
     '<div class="kr-card"><h3 class="kr-h">Fünf Renditeszenarien</h3><div class="kr-scroll" id="kr-scen"></div><div class="kr-sub" style="margin-top:.6rem">Netto jeweils vor der Ablösung des im Monat fälligen Kredits, Steuerabschlag auf Kursgewinne abgezogen. Die Szenarien übernehmen Zusatz-Sparrate und Bausparer aus „Was wäre, wenn“.</div><div class="kr-sub" id="kr-scen-cur" style="margin-top:.4rem"></div></div>' +
     '<div class="kr-row" id="kr-cards"></div>' +
-    '<div class="kr-card"><h3 class="kr-h">Stände eintragen</h3>' + standForm(iym(last + 1)) + '<div class="kr-scroll" style="margin-top:1rem"><table class="kr-table"><thead><tr><th>Monat</th><th>TR Cash</th><th>TR Portfolio</th><th>ING Depot</th><th>Summe</th><th>Depotkauf</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div></div>' +
+    '<div class="kr-card"><h3 class="kr-h">Stände eintragen</h3>' + standForm(iym(last + 1)) + '<div class="kr-scroll" style="margin-top:1rem"><table class="kr-table"><thead><tr><th>Monat</th><th>TR Cash</th><th>TR Portfolio</th><th>ING Depot</th><th>Summe</th><th>Depotkauf</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div><div class="kr-sub" style="margin-top:.5rem">Prozentwerte: Veränderung zum vorherigen Stand, einschließlich Sparraten und Depotkäufen.</div></div>' +
     '<div class="kr-card"><h3 class="kr-h">Geplante Ein- und Auszahlungen Trade Republic Tagesgeld</h3><div class="kr-form">' +
     '<label class="kr-f">Monat<input type="month" id="kr-b-m" value="' + iym(last + 1) + '"></label>' +
     '<label class="kr-f">Betrag (€, Auszahlung mit Minus)<input type="text" inputmode="text" id="kr-b-v"></label>' +
