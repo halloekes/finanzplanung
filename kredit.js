@@ -109,7 +109,7 @@ function K() { return (typeof state !== 'undefined' && state && state.kredit) ||
 function BW() { const k = K(); return k && Array.isArray(k.bewegungen) ? k.bewegungen : []; }
 function KOR() { const k = K(); return k && Array.isArray(k.korrekturen) ? k.korrekturen : []; }
 function ready() { const k = K(); return !!(k && k.params && Array.isArray(k.staende) && k.staende.length); }
-function bausOn(P) { return wi.baus === null ? P.bausparerBetrag > 0 : wi.baus; }
+function bausOn(P) { return wi.baus === null ? false : wi.baus; }
 function toast(m) { if (typeof showToast === 'function') showToast(m); }
 function commit() {
   if (typeof saveState === 'function') saveState();
@@ -250,8 +250,8 @@ function update() {
   $('kr-banner').innerHTML = ok ? '' : '<div class="kr-banner">Werte für ' + mmY(exp) + ' fehlen. Bitte unten Cash, TR Portfolio und ING eintragen, bis dahin rechnet der Tab mit der Hochrechnung.</div>';
 
   $('kr-kpis').innerHTML =
-    '<div class="kr-card kr-kpi"><div class="kr-eyebrow">Zielerreichung</div><div class="kr-big">' + Math.round(cur.netNow / ziel * 100) + ' %</div><div class="kr-sub">Ziel aus dem Topf ' + eur(ziel) + (bK ? ' (nach Bausparer)' : '') + '</div></div>' +
-    '<div class="kr-card kr-kpi"><div class="kr-eyebrow">' + (be <= 0 ? 'Puffer: Depot darf fallen um p.a.' : 'Nötige Depotrendite p.a.') + '</div><div class="kr-big ' + (be <= 0 ? 'kr-ok' : 'kr-bad') + '">' + (Math.abs(be) * 100).toFixed(1).replace('.', ',') + ' %</div><div class="kr-sub">' + (be <= 0 ? 'Bis zu diesem Minus pro Jahr reicht es für beide Kredite.' : 'So viel muss das Depot pro Jahr bringen, damit es reicht.') + '</div></div>' +
+    '<div class="kr-card kr-kpi"><div class="kr-eyebrow">Zielerreichung</div><div class="kr-big">' + Math.round(cur.netNow / ziel * 100) + ' %</div><div class="kr-sub">Ziel aus dem Topf ' + eur(ziel) + (bK ? ' (nach Bausparer)' : (P.bausparerBetrag > 0 ? ' (ohne Bausparer)' : '')) + '</div></div>' +
+    '<div class="kr-card kr-kpi"><div class="kr-eyebrow">' + (be <= 0 ? 'Puffer: Depot darf fallen um p.a.' : 'Nötige Depotrendite p.a.') + '</div><div class="kr-big ' + (be <= 0 ? 'kr-ok' : 'kr-bad') + '">' + (Math.abs(be) * 100).toFixed(1).replace('.', ',') + ' %</div><div class="kr-sub">' + (be <= 0 ? 'So viel darf das Depot ab heute pro Jahr verlieren, und es reicht trotzdem. Cash und Einzahlungen laufen dabei wie geplant weiter.' : 'So viel muss das Depot pro Jahr bringen, damit es reicht.') + '</div></div>' +
     '<div class="kr-card kr-kpi"><div class="kr-eyebrow">Fertig vor Stichtag</div><div class="kr-big">' + ahead + ' Mon.</div><div class="kr-sub">bei ' + pct(wi.r) + ' Rendite, beide ablösbar ab ' + mOr(cur.firstB) + '</div></div>' +
     '<div class="kr-card kr-kpi"><div class="kr-eyebrow">Vermögen netto</div><div class="kr-big">' + eur(cur.netNow) + '</div><div class="kr-sub">davon Cash ' + eur(cur.cashNow) + '</div></div>';
 
@@ -264,7 +264,7 @@ function update() {
   const tj = istRendite(P, S); let near = -1;
   if (tj) { let dmin = 1e9; SCEN.forEach((s, i) => { const x = Math.abs(s[1] / 100 - tj.r); if (x < dmin) { dmin = x; near = i; } }); }
   const sc = $('kr-scen-cur');
-  if (sc) sc.textContent = tj ? 'Hervorgehoben: „' + SCEN[near][0] + '“ liegt am nächsten an eurem bisherigen Kurs. Das Depot hat seit ' + mmY(tj.b0) + ' (' + tj.n + (tj.n === 1 ? ' Monat' : ' Monate') + ') umgerechnet ' + (tj.r >= 0 ? '+' : '−') + (Math.abs(tj.r) * 100).toFixed(1).replace('.', ',') + ' % pro Jahr gebracht.' + (tj.n < 12 ? ' Über so kurze Zeit schwankt dieser Wert stark.' : '') : 'Sobald zwei Stände eingetragen sind, wird hier das Szenario markiert, das eurem bisherigen Kurs am nächsten kommt.';
+  if (sc) sc.textContent = tj ? 'Hervorgehoben: „' + SCEN[near][0] + '“ liegt am nächsten an eurem Kurs seit dem ersten Stand im Tool. Das ist ein Rückblick, keine Prognose: Das Depot hat seit ' + mmY(tj.b0) + ' (' + tj.n + (tj.n === 1 ? ' Monat' : ' Monate') + ') umgerechnet ' + (tj.r >= 0 ? '+' : '−') + (Math.abs(tj.r) * 100).toFixed(1).replace('.', ',') + ' % pro Jahr gebracht.' + (tj.n < 12 ? ' Über so kurze Zeit schwankt dieser Wert stark.' : '') : 'Sobald zwei Stände eingetragen sind, wird hier das Szenario markiert, das eurem bisherigen Kurs am nächsten kommt.';
   $('kr-scen').innerHTML = '<table class="kr-table"><thead><tr><th>Szenario</th><th>Rendite</th><th>Netto ' + mmY(cur.eK) + '</th><th>Netto ' + mmY(cur.eG) + '</th><th>Überschuss</th><th>Ampel</th></tr></thead><tbody>' +
     SCEN.map((s, i) => { const x = sim(P, S, { r: s[1] / 100, extra: wi.extra, baus: on }), good = x.ueber >= 0;
       return '<tr' + (i === near ? ' class="kr-cur"' : '') + '><td><strong>' + s[0] + '</strong>' + (i === near ? ' <span class="kr-pill" style="background:var(--accent);color:#fff;margin-left:.4rem">aktueller Kurs</span>' : '') + '</td><td class="kr-num">' + pct(s[1]) + '</td><td class="kr-num">' + eur(x.netK) + '</td><td class="kr-num">' + eur(x.netG) + '</td><td class="kr-num">' + (good ? '+' : '−') + eur(Math.abs(x.ueber)) + '</td><td><span class="kr-pill ' + (good ? 'ok">reicht' : 'bad">Lücke') + '</span></td></tr>'; }).join('') + '</tbody></table>';
