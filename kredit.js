@@ -161,6 +161,7 @@ const FIELDS = [
   ['einstand', 'Wertpapiere – Einstand im Monat des ersten Stands (€)'], ['trQuartal', 'TR – Einzahlung pro Quartal, Feb/Mai/Aug/Nov (€)'],
   ['trSparplan', 'TR – Sparpläne pro Monat aus Cash (€)'], ['ingSparplan', 'ING – Sparpläne pro Monat (€)'],
   ['ingStart', 'ING – Sparplanstart', 'month'], ['ingEingezahlt', 'ING – eingezahlt bis zum Monat des ersten Stands (€)'],
+  ['trStart', 'TR – Sparplanstart', 'month'], ['trEingezahlt', 'TR – in Wertpapiere eingezahlt bis zum Monat des ersten Stands (€)'],
   ['cashZins', 'Zins auf Cash % p.a.'], ['steuer', 'Steuerabschlag auf Kursgewinne %'],
   ['bausparerBetrag', 'Bausparer – Auszahlungsbetrag (€, 0 = ohne)'], ['bausparerMonat', 'Bausparer – Auszahlungsmonat', 'month'],
   ['bausparerFrist', 'Bausparer – Kündigungsfrist (Monate)'], ['tag', 'Stände eintragen ab dem (Tag im Monat)'],
@@ -235,6 +236,25 @@ function istRendite(P, S) {
   return { r: (lo + hi) / 2, n: last - b0, b0: b0 };
 }
 
+function kursRendite(P, S) {
+  const b0 = ymi(S[0].monat), last = ymi(S[S.length - 1].monat), L = S[S.length - 1], fl = [];
+  const hist = (start, paid, val) => {
+    const ok = isYm(start) && paid > 0 && ymi(start) < b0;
+    if (ok) { const s0 = ymi(start); for (let i = s0; i < b0; i++) fl.push([i, paid / (b0 - s0)]); } else fl.push([b0, val]);
+    return ok;
+  };
+  const ingHist = hist(P.ingStart, P.ingEingezahlt, S[0].ing), trHist = hist(P.trStart, P.trEingezahlt, S[0].tr);
+  const spar = (P.trSparplan || 0) + (P.ingSparplan || 0);
+  for (let i = b0; i < last; i++) fl.push([i, spar]);
+  S.forEach(s => { const k = (s.kaufTr || 0) + (s.kaufIng || 0), m = ymi(s.monat); if (k > 0 && m > b0) fl.push([m - 1, k]); });
+  const first = fl.reduce((a, x) => Math.min(a, x[0]), last);
+  if (first >= last) return null;
+  const f = r => fl.reduce((a, x) => a + x[1] * Math.pow(1 + r, (last - x[0]) / 12), 0);
+  let lo = -0.99, hi = 10;
+  for (let n = 0; n < 60; n++) { const mid = (lo + hi) / 2; if (f(mid) < L.tr + L.ing) lo = mid; else hi = mid; }
+  return { r: (lo + hi) / 2, first: first, n: last - first, b0: b0, ingHist: ingHist, trHist: trHist };
+}
+
 function update() {
   const k = K(), P = k.params, S = k.staende, on = bausOn(P);
   const o = { r: wi.r / 100, extra: wi.extra, baus: on };
@@ -261,10 +281,10 @@ function update() {
   $('kr-x-l').textContent = wi.extra ? '+' + wi.extra + ' €' : '0 €';
   $('kr-wi').innerHTML = kv('Klein ablösbar ab', mOr(cur.firstK)) + kv('Beide ablösbar ab', mOr(cur.firstB)) + kv('Überschuss nach beiden Ablösungen', (cur.ueber >= 0 ? '+' : '−') + eur(Math.abs(cur.ueber)), cur.ueber >= 0 ? 'kr-ok' : 'kr-bad');
 
-  const tj = istRendite(P, S); let near = -1;
+  const tj = kursRendite(P, S); let near = -1;
   if (tj) { let dmin = 1e9; SCEN.forEach((s, i) => { const x = Math.abs(s[1] / 100 - tj.r); if (x < dmin) { dmin = x; near = i; } }); }
   const sc = $('kr-scen-cur');
-  if (sc) sc.textContent = tj ? 'Hervorgehoben: „' + SCEN[near][0] + '“ liegt am nächsten an eurem Kurs seit dem ersten Stand im Tool. Das ist ein Rückblick, keine Prognose: Das Depot hat seit ' + mmY(tj.b0) + ' (' + tj.n + (tj.n === 1 ? ' Monat' : ' Monate') + ') umgerechnet ' + (tj.r >= 0 ? '+' : '−') + (Math.abs(tj.r) * 100).toFixed(1).replace('.', ',') + ' % pro Jahr gebracht.' + (tj.n < 12 ? ' Über so kurze Zeit schwankt dieser Wert stark.' : '') : 'Sobald zwei Stände eingetragen sind, wird hier das Szenario markiert, das eurem bisherigen Kurs am nächsten kommt.';
+  if (sc) sc.textContent = tj ? 'Hervorgehoben: „' + SCEN[near][0] + '“ liegt am nächsten an eurem bisherigen Kurs. Das ist ein Rückblick, keine Prognose: Die Depots haben seit ' + mmY(tj.first) + ' (' + tj.n + (tj.n === 1 ? ' Monat' : ' Monate') + ') umgerechnet ' + (tj.r >= 0 ? '+' : '−') + (Math.abs(tj.r) * 100).toFixed(1).replace('.', ',') + ' % pro Jahr gebracht.' + (tj.ingHist && !tj.trHist ? ' ING zählt über die ganze Sparplan-Laufzeit, TR erst ab ' + mmY(tj.b0) + ', weil Sparplanstart und Einzahlungen für TR in den Einstellungen fehlen.' : !tj.ingHist && !tj.trHist ? ' Gemessen ab dem ersten Stand im Tool, weil Sparplanstart und Einzahlungen in den Einstellungen fehlen.' : !tj.ingHist ? ' TR zählt über die ganze Sparplan-Laufzeit, ING erst ab ' + mmY(tj.b0) + '.' : '') + (tj.n < 12 ? ' Über so kurze Zeit schwankt dieser Wert stark.' : '') : 'Sobald zwei Stände eingetragen sind, wird hier das Szenario markiert, das eurem bisherigen Kurs am nächsten kommt.';
   $('kr-scen').innerHTML = '<table class="kr-table"><thead><tr><th>Szenario</th><th>Rendite</th><th>Netto ' + mmY(cur.eK) + '</th><th>Netto ' + mmY(cur.eG) + '</th><th>Überschuss</th><th>Ampel</th></tr></thead><tbody>' +
     SCEN.map((s, i) => { const x = sim(P, S, { r: s[1] / 100, extra: wi.extra, baus: on }), good = x.ueber >= 0;
       return '<tr' + (i === near ? ' class="kr-cur"' : '') + '><td><strong>' + s[0] + '</strong>' + (i === near ? ' <span class="kr-pill" style="background:var(--accent);color:#fff;margin-left:.4rem">aktueller Kurs</span>' : '') + '</td><td class="kr-num">' + pct(s[1]) + '</td><td class="kr-num">' + eur(x.netK) + '</td><td class="kr-num">' + eur(x.netG) + '</td><td class="kr-num">' + (good ? '+' : '−') + eur(Math.abs(x.ueber)) + '</td><td><span class="kr-pill ' + (good ? 'ok">reicht' : 'bad">Lücke') + '</span></td></tr>'; }).join('') + '</tbody></table>';
@@ -440,6 +460,6 @@ function init() {
   renderKredit();
 }
 
-if (typeof window !== 'undefined') { window.renderKredit = renderKredit; window.__krModel = { sim: sim, breakEven: breakEven, glide: glide, ingPerf: ingPerf, istRendite: istRendite }; }
+if (typeof window !== 'undefined') { window.renderKredit = renderKredit; window.__krModel = { sim: sim, breakEven: breakEven, glide: glide, ingPerf: ingPerf, istRendite: istRendite, kursRendite: kursRendite }; }
 if (typeof document !== 'undefined') { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init(); }
 })();
