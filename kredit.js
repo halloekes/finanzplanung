@@ -180,7 +180,7 @@ function paramsForm(P) {
 function standForm(defMonth) {
   return '<div class="kr-form">' +
     '<label class="kr-f">Monat<input type="month" id="kr-s-m" value="' + esc(defMonth) + '"></label>' +
-    '<label class="kr-f">Cash für die Ablösung (€)<input type="text" inputmode="decimal" id="kr-s-c"></label>' +
+    '<label class="kr-f">TR Cash für die Ablösung (€)<input type="text" inputmode="decimal" id="kr-s-c"></label>' +
     '<label class="kr-f">TR Portfolio ohne Geldmarkt (€)<input type="text" inputmode="decimal" id="kr-s-t"></label>' +
     '<label class="kr-f">ING Depot (€)<input type="text" inputmode="decimal" id="kr-s-i"></label>' +
     '<label class="kr-f">Depotkauf TR, einmalig (€)<input type="text" inputmode="decimal" id="kr-s-kt"></label>' +
@@ -267,7 +267,7 @@ function update() {
   const nextTxt = String(tag).padStart(2, '0') + '.' + String(nextM % 12 + 1).padStart(2, '0') + '.';
 
   $('kr-status').textContent = 'Stand ' + mmY(cur.last) + ' · Kredit klein bis ' + mmY(cur.eK) + ' · Kredit groß bis ' + mmY(cur.eG) + (ok ? ' · Stände aktuell, nächste Aktualisierung am ' + nextTxt : '');
-  $('kr-banner').innerHTML = ok ? '' : '<div class="kr-banner">Werte für ' + mmY(exp) + ' fehlen. Bitte unten Cash, TR Portfolio und ING eintragen, bis dahin rechnet der Tab mit der Hochrechnung.</div>';
+  $('kr-banner').innerHTML = ok ? '' : '<div class="kr-banner">Werte für ' + mmY(exp) + ' fehlen. Bitte unten TR Cash, TR Portfolio und ING eintragen, bis dahin rechnet der Tab mit der Hochrechnung.</div>';
 
   $('kr-kpis').innerHTML =
     '<div class="kr-card kr-kpi"><div class="kr-eyebrow">Zielerreichung</div><div class="kr-big">' + Math.round(cur.netNow / ziel * 100) + ' %</div><div class="kr-sub">Ziel aus dem Topf ' + eur(ziel) + (bK ? ' (nach Bausparer)' : (P.bausparerBetrag > 0 ? ' (ohne Bausparer)' : '')) + '</div></div>' +
@@ -290,7 +290,7 @@ function update() {
       return '<tr' + (i === near ? ' class="kr-cur"' : '') + '><td><strong>' + s[0] + '</strong>' + (i === near ? ' <span class="kr-pill" style="background:var(--accent);color:#fff;margin-left:.4rem">aktueller Kurs</span>' : '') + '</td><td class="kr-num">' + pct(s[1]) + '</td><td class="kr-num">' + eur(x.netK) + '</td><td class="kr-num">' + eur(x.netG) + '</td><td class="kr-num">' + (good ? '+' : '−') + eur(Math.abs(x.ueber)) + '</td><td><span class="kr-pill ' + (good ? 'ok">reicht' : 'bad">Lücke') + '</span></td></tr>'; }).join('') + '</tbody></table>';
 
   const frist = P.bausparerFrist || 0, hasB = P.bausparerBetrag > 0 && isYm(P.bausparerMonat), kb = hasB ? ymi(P.bausparerMonat) - frist : 0;
-  const todo = ['Am ' + tag + '. des Monats: Cash, TR Portfolio und ING eintragen.',
+  const todo = ['Am ' + tag + '. des Monats: TR Cash, TR Portfolio und ING eintragen.',
     'Kredit klein sichern, sobald Vermögen netto die aktuelle Restschuld erreicht (' + eur(cur.kNow) + '). Es fehlen noch ' + eur(Math.max(0, cur.kNow - cur.netNow)) + '.',
     'Dann parken: klein ' + eur(cur.endK - bK) + (bK ? ' nur mit Bausparer (ohne ihn ' + eur(cur.endK) + ')' : '') + ', danach groß ' + eur(cur.endG) + '.'];
   if (hasB) todo.push('Bausparer: Zuteilung und Bonuszins prüfen. Bei Einsatz bis ' + mmY(kb) + ' kündigen (noch ' + Math.max(0, kb - nowM) + ' Monate).');
@@ -352,7 +352,7 @@ function renderKredit() {
     '<div id="kr-wi" style="border-top:1px solid var(--line);padding-top:.7rem"></div><button class="btn btn-secondary" type="button" data-kr="reset">Zurück zum Plan</button></div></div>' +
     '<div class="kr-card"><h3 class="kr-h">Fünf Renditeszenarien</h3><div class="kr-scroll" id="kr-scen"></div><div class="kr-sub" style="margin-top:.6rem">Netto jeweils vor der Ablösung des im Monat fälligen Kredits, Steuerabschlag auf Kursgewinne abgezogen. Die Szenarien übernehmen Zusatz-Sparrate und Bausparer aus „Was wäre, wenn“.</div><div class="kr-sub" id="kr-scen-cur" style="margin-top:.4rem"></div></div>' +
     '<div class="kr-row" id="kr-cards"></div>' +
-    '<div class="kr-card"><h3 class="kr-h">Stände eintragen</h3>' + standForm(iym(last + 1)) + '<div class="kr-scroll" style="margin-top:1rem"><table class="kr-table"><thead><tr><th>Monat</th><th>Cash</th><th>TR Portfolio</th><th>ING Depot</th><th>Summe</th><th>Depotkauf</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div></div>' +
+    '<div class="kr-card"><h3 class="kr-h">Stände eintragen</h3>' + standForm(iym(last + 1)) + '<div class="kr-scroll" style="margin-top:1rem"><table class="kr-table"><thead><tr><th>Monat</th><th>TR Cash</th><th>TR Portfolio</th><th>ING Depot</th><th>Summe</th><th>Depotkauf</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div></div>' +
     '<div class="kr-card"><h3 class="kr-h">Geplante Ein- und Auszahlungen Trade Republic Tagesgeld</h3><div class="kr-form">' +
     '<label class="kr-f">Monat<input type="month" id="kr-b-m" value="' + iym(last + 1) + '"></label>' +
     '<label class="kr-f">Betrag (€, Auszahlung mit Minus)<input type="text" inputmode="text" id="kr-b-v"></label>' +
