@@ -218,11 +218,11 @@ function mOr(m) { return m === null ? 'nicht absehbar' : lab(m); }
 function korBox(kredit, nowM) {
   const L = KOR().filter(c => c.kredit === kredit).sort((a, b) => ymi(a.monat) - ymi(b.monat));
   return '<details' + (L.length ? ' open' : '') + ' style="margin-top:.7rem;border-top:1px solid var(--line);padding-top:.6rem"><summary style="cursor:pointer;font-weight:600;font-size:.88rem">Restschuld korrigieren</summary>' +
-    '<div class="kr-form" style="margin-top:.6rem"><label class="kr-f">Stand am 1. des Monats<input type="month" data-km="' + kredit + '" value="' + iym(nowM) + '"></label>' +
+    '<div class="kr-form" style="margin-top:.6rem"><label class="kr-f">Gilt für Monat<input type="month" data-km="' + kredit + '" value="' + iym(nowM) + '"></label>' +
     '<label class="kr-f">Restschuld laut Bank (€)<input type="text" inputmode="decimal" data-kv="' + kredit + '"></label>' +
     '<button class="btn btn-secondary" type="button" data-kr="kor" data-k="' + kredit + '">Übernehmen</button></div>' +
-    '<div class="kr-sub" style="margin-top:.5rem">Ab diesem Monat rechnet der Tab mit Zins und Rate weiter, jeweils zum Monatsersten.</div>' +
-    L.map(c => '<div class="kr-kv" style="margin-top:.3rem"><span>Korrigiert zum 01.' + mmY(ymi(c.monat)).replace('/', '.') + '</span><span class="kr-num">' + eur(c.saldo) + ' <button type="button" class="kr-x" data-kr="kordel" data-k="' + kredit + '" data-m="' + esc(c.monat) + '" aria-label="Korrektur löschen">×</button></span></div>').join('') + '</details>';
+    '<div class="kr-sub" style="margin-top:.5rem">Der eingetragene Wert gilt für den gewählten Monat unverändert. Zins und Rate rechnet der Tab erst zum nächsten Monatsersten wieder ein.</div>' +
+    L.map(c => '<div class="kr-kv" style="margin-top:.3rem"><span>Korrigiert für ' + mmY(ymi(c.monat)) + '</span><span class="kr-num">' + eur(c.saldo) + ' <button type="button" class="kr-x" data-kr="kordel" data-k="' + kredit + '" data-m="' + esc(c.monat) + '" aria-label="Korrektur löschen">×</button></span></div>').join('') + '</details>';
 }
 
 function istRendite(P, S) {
@@ -409,7 +409,7 @@ function saveKor(root, kredit) {
   if (!Array.isArray(k.korrekturen)) k.korrekturen = [];
   const at = k.korrekturen.findIndex(c => c.kredit === kredit && c.monat === m), rec = { kredit: kredit, monat: m, saldo: v };
   if (at >= 0) k.korrekturen[at] = rec; else k.korrekturen.push(rec);
-  commit(); toast('Restschuld ' + (kredit === 'klein' ? 'klein' : 'groß') + ' zum 01.' + mmY(ymi(m)).replace('/', '.') + ' korrigiert');
+  commit(); toast('Restschuld ' + (kredit === 'klein' ? 'klein' : 'groß') + ' für ' + mmY(ymi(m)) + ' korrigiert');
 }
 
 function saveBw(root) {
