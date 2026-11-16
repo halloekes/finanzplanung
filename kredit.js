@@ -15,7 +15,7 @@ const pct = r => (r > 0 ? '+' : r < 0 ? '−' : '') + Math.abs(r) + ' %';
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const isYm = s => /^\d{4}-(0[1-9]|1[0-2])$/.test(String(s));
 function num(t) {
-  let s = String(t === null || t === undefined ? '' : t).replace(/\s|€|%/g, '');
+  let s = String(t === null || t === undefined ? '' : t).replace(/\s|€|%/g, '').replace(/−/g, '-');
   if (s === '') return null;
   if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.');
   else if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
@@ -31,6 +31,7 @@ function sim(P, S, o) {
   const bM = o.baus && P.bausparerBetrag > 0 && isYm(P.bausparerMonat) ? ymi(P.bausparerMonat) : -1;
   const iK = P.kleinZins / 1200, iG = P.grossZins / 1200, iC = (P.cashZins || 0) / 1200, tx = (P.steuer || 0) / 100;
   const spar = (P.trSparplan || 0) + (P.ingSparplan || 0);
+  const bw = {}; BW().forEach(b => { if (isYm(b.monat)) bw[ymi(b.monat)] = (bw[ymi(b.monat)] || 0) + b.betrag; });
   let cash = S[0].cash, wp = S[0].tr + S[0].ing, ein = P.einstand, bk = P.kleinSaldo, bg = P.grossSaldo, kum = 0, pK = false, pG = false;
   const tax = () => tx * Math.max(0, wp - ein);
   const R = { b0: b0, last: last, eK: eK, eG: eG, bM: bM, net: [cash + wp - tax()], rest: [bk + bg], cash: [cash],
@@ -39,6 +40,7 @@ function sim(P, S, o) {
     const mo = m % 12 + 1, fut = m > last;
     cash = cash * (1 + iC) + ([2, 5, 8, 11].indexOf(mo) >= 0 ? (P.trQuartal || 0) : 0) - (P.trSparplan || 0);
     if (m === bM) cash += P.bausparerBetrag;
+    if (bw[m]) cash += bw[m];
     const add = spar + (fut ? o.extra : 0);
     wp = wp * Math.pow(1 + o.r, 1 / 12) + add; ein += add;
     if (ist[m]) { cash = ist[m].cash; wp = ist[m].tr + ist[m].ing; ein += (ist[m].kaufTr || 0) + (ist[m].kaufIng || 0); }
@@ -99,6 +101,7 @@ let wi = { r: 0, extra: 0, baus: null };
 let view = null;
 
 function K() { return (typeof state !== 'undefined' && state && state.kredit) || null; }
+function BW() { const k = K(); return k && Array.isArray(k.bewegungen) ? k.bewegungen : []; }
 function ready() { const k = K(); return !!(k && k.params && Array.isArray(k.staende) && k.staende.length); }
 function bausOn(P) { return wi.baus === null ? P.bausparerBetrag > 0 : wi.baus; }
 function toast(m) { if (typeof showToast === 'function') showToast(m); }
@@ -261,6 +264,15 @@ function update() {
   ].filter(Boolean).map(t => '<div style="padding:.25rem 0">' + t + '</div>').join('');
 }
 
+function bwTable(last) {
+  const L = BW().slice().sort((a, b) => ymi(a.monat) - ymi(b.monat));
+  if (!L.length) return '';
+  return '<div class="kr-scroll" style="margin-top:1rem"><table class="kr-table"><thead><tr><th>Monat</th><th>Betrag</th><th style="text-align:left">Notiz</th><th>Status</th><th></th></tr></thead><tbody>' + L.map(b => {
+    const done = ymi(b.monat) <= last;
+    return '<tr' + (done ? ' style="opacity:.55"' : '') + '><td>' + mmY(ymi(b.monat)) + '</td><td class="kr-num ' + (b.betrag >= 0 ? 'kr-ok' : 'kr-bad') + '">' + (b.betrag >= 0 ? '+' : '−') + eur(Math.abs(b.betrag)) + '</td><td style="text-align:left">' + esc(b.notiz || '') + '</td><td>' + (done ? 'im Stand enthalten' : '<span class="kr-pill ok">geplant</span>') + '</td><td><button type="button" class="kr-x" data-kr="bwdel" data-id="' + esc(b.id) + '" aria-label="Eintrag löschen">×</button></td></tr>';
+  }).join('') + '</tbody></table></div>';
+}
+
 function renderKredit() {
   const root = document.getElementById('kredit-root');
   if (!root) return;
@@ -287,6 +299,12 @@ function renderKredit() {
     '<div class="kr-card"><h3 class="kr-h">Fünf Renditeszenarien</h3><div class="kr-scroll" id="kr-scen"></div><div class="kr-sub" style="margin-top:.6rem">Netto jeweils vor der Ablösung des im Monat fälligen Kredits, Steuerabschlag auf Kursgewinne abgezogen. Die Szenarien übernehmen Zusatz-Sparrate und Bausparer aus „Was wäre, wenn“.</div></div>' +
     '<div class="kr-row" id="kr-cards"></div>' +
     '<div class="kr-card"><h3 class="kr-h">Stände eintragen</h3>' + standForm(iym(last + 1)) + '<div class="kr-scroll" style="margin-top:1rem"><table class="kr-table"><thead><tr><th>Monat</th><th>Cash</th><th>TR Portfolio</th><th>ING Depot</th><th>Summe</th><th>Depotkauf</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div></div>' +
+    '<div class="kr-card"><h3 class="kr-h">Geplante Ein- und Auszahlungen aufs Tagesgeld</h3><div class="kr-form">' +
+    '<label class="kr-f">Monat<input type="month" id="kr-b-m" value="' + iym(last + 1) + '"></label>' +
+    '<label class="kr-f">Betrag (€, Auszahlung mit Minus)<input type="text" inputmode="text" id="kr-b-v"></label>' +
+    '<label class="kr-f" style="flex:2 1 260px">Notiz<input type="text" id="kr-b-n" maxlength="80" style="font-family:inherit"></label>' +
+    '<button class="btn" type="button" data-kr="bw">Vormerken</button></div>' + bwTable(last) +
+    '<div class="kr-sub" style="margin-top:.6rem">Einmalige Bewegungen neben den regelmäßigen Sparraten, zum Beispiel Bonus, Steuererstattung oder eine größere Ausgabe. Sie zählen in der Hochrechnung, bis für den Monat ein Stand eingetragen ist; danach steckt der Betrag im echten Cash-Wert. Passiert die Bewegung erst nach dem Eintragen des Monats, den Folgemonat wählen.</div></div>' +
     '<div class="kr-card"><h3 class="kr-h">ING-Depot – Rendite seit Start</h3><div id="kr-ing"></div></div>' +
     '<details class="kr-card"><summary>Regel fürs Sichern</summary><div id="kr-rules"></div></details>' +
     '<details class="kr-card"><summary>Einstellungen</summary>' + paramsForm(P) + '</details></div>';
@@ -327,6 +345,15 @@ function saveStand(root) {
   commit(); toast('Stand ' + mmY(ymi(m)) + ' gespeichert');
 }
 
+function saveBw(root) {
+  const m = root.querySelector('#kr-b-m').value, v = num(root.querySelector('#kr-b-v').value), n = root.querySelector('#kr-b-n').value.trim();
+  if (!isYm(m) || v === null || v === 0) { toast('Bitte Monat und Betrag eintragen (Auszahlung mit Minus)'); return; }
+  if (typeof pushHistory === 'function') pushHistory();
+  if (!Array.isArray(state.kredit.bewegungen)) state.kredit.bewegungen = [];
+  state.kredit.bewegungen.push({ id: Date.now().toString(36), monat: m, betrag: v, notiz: n });
+  commit(); toast((v > 0 ? 'Einzahlung' : 'Auszahlung') + ' für ' + mmY(ymi(m)) + ' vorgemerkt');
+}
+
 function init() {
   const root = document.getElementById('kredit-root');
   if (!root) return;
@@ -342,6 +369,11 @@ function init() {
     if (a === 'reset') { wi = { r: 0, extra: 0, baus: null }; renderKredit(); }
     else if (a === 'params') saveParams(root);
     else if (a === 'stand') saveStand(root);
+    else if (a === 'bw') saveBw(root);
+    else if (a === 'bwdel') {
+      const L = BW(), at = L.findIndex(x => String(x.id) === b.dataset.id);
+      if (at >= 0) { if (typeof pushHistory === 'function') pushHistory(); L.splice(at, 1); commit(); }
+    }
     else if (a === 'del') {
       const S = state.kredit.staende, at = S.findIndex(s => s.monat === b.dataset.m);
       if (at > 0 && confirm('Stand ' + mmY(ymi(b.dataset.m)) + ' löschen?')) { if (typeof pushHistory === 'function') pushHistory(); S.splice(at, 1); commit(); }
