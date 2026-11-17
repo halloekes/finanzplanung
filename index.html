@@ -2032,7 +2032,7 @@ function renderVersicherungen() {
       <td class="col-checkbox"><span class="checkbox ${v.aktiv ? 'checked' : ''}" data-toggle="versicherungen" data-id="${v.id}"></span></td>
       <td><strong>${escapeHtml(v.versicherer)}</strong></td>
       <td>
-        <div>${escapeHtml(v.bezeichnung)}${/^https:\/\//.test(v.unterlagen || '') ? ` <a href="${escapeHtml(v.unterlagen)}" target="_blank" rel="noopener" title="Unterlagen im Drive öffnen" style="text-decoration: none;">📁</a>` : ''}</div>
+        <div>${/^https:\/\//.test(v.unterlagen || '') ? `<a href="${escapeHtml(v.unterlagen)}" target="_blank" rel="noopener" title="Unterlagen im Drive öffnen" style="color: var(--accent); text-decoration: underline; text-underline-offset: 2px;">${escapeHtml(v.bezeichnung)}</a>` : escapeHtml(v.bezeichnung)}</div>
         ${v.vertragsnummer ? `<div class="mono" style="font-size: 0.7rem; color: var(--ink-soft); margin-top: 0.15rem;">${escapeHtml(v.vertragsnummer)}</div>` : ''}
         ${v.kommentar ? `<div style="font-size: 0.75rem; color: var(--ink-soft); margin-top: 0.15rem; font-style: italic;">${escapeHtml(v.kommentar)}</div>` : ''}
       </td>
