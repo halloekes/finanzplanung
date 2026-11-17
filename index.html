@@ -2032,7 +2032,7 @@ function renderVersicherungen() {
       <td class="col-checkbox"><span class="checkbox ${v.aktiv ? 'checked' : ''}" data-toggle="versicherungen" data-id="${v.id}"></span></td>
       <td><strong>${escapeHtml(v.versicherer)}</strong></td>
       <td>
-        <div>${escapeHtml(v.bezeichnung)}</div>
+        <div>${escapeHtml(v.bezeichnung)}${/^https:\/\//.test(v.unterlagen || '') ? ` <a href="${escapeHtml(v.unterlagen)}" target="_blank" rel="noopener" title="Unterlagen im Drive öffnen" style="text-decoration: none;">📁</a>` : ''}</div>
         ${v.vertragsnummer ? `<div class="mono" style="font-size: 0.7rem; color: var(--ink-soft); margin-top: 0.15rem;">${escapeHtml(v.vertragsnummer)}</div>` : ''}
         ${v.kommentar ? `<div style="font-size: 0.75rem; color: var(--ink-soft); margin-top: 0.15rem; font-style: italic;">${escapeHtml(v.kommentar)}</div>` : ''}
       </td>
@@ -2170,6 +2170,7 @@ function getFieldConfigs() {
         { name: 'quellkonto', label: 'Quellkonto', type: 'select', options: kontoOptions(false), default: GIRO, paired: true },
         { name: 'betrag', label: 'Beitrag (€)', type: 'number', step: '0.01', required: true, paired: true },
         { name: 'proJahr', label: 'Frequenz', type: 'select', options: FREQUENZEN, default: 12, paired: true },
+        { name: 'unterlagen', label: 'Unterlagen (Link zum Drive-Ordner)', type: 'text', placeholder: 'https://drive.google.com/…' },
         { name: 'kommentar', label: 'Kommentar', type: 'text', placeholder: 'optional' },
       ],
     },
