@@ -139,6 +139,9 @@ const CSS = `
 .kr-table tr.kr-cur td{background:var(--accent-soft)}
 .kr-table tr.kr-cur td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 .kr-d{display:inline-block;min-width:3.9rem;margin-left:.4rem;font-size:.78rem;font-weight:600;text-align:right}
+.kr-plan{max-height:30rem;overflow:auto}
+.kr-plan thead th{position:sticky;top:0;background:var(--bg-elevated);z-index:1}
+.kr-table tr.kr-end td{background:rgba(184,137,59,.16)}
 .kr-pill{display:inline-block;padding:.15rem .6rem;border-radius:999px;font-weight:700;font-size:.78rem}
 .kr-pill.ok{background:var(--accent-soft);color:var(--accent)}.kr-pill.bad{background:var(--warning-soft);color:var(--warning)}
 .kr-ctl label{display:flex;justify-content:space-between;font-weight:600;font-size:.9rem;gap:.75rem}
@@ -159,6 +162,8 @@ const FIELDS = [
   ['kleinZins', 'Kredit klein – Sollzins % p.a.'], ['kleinEnde', 'Kredit klein – Zinsbindungsende', 'month'],
   ['grossSaldo', 'Kredit groß – Restschuld im Monat des ersten Stands (€)'], ['grossRate', 'Kredit groß – Monatsrate (€)'],
   ['grossZins', 'Kredit groß – Sollzins % p.a.'], ['grossEnde', 'Kredit groß – Zinsbindungsende', 'month'],
+  ['kleinStart', 'Kredit klein – Startmonat (erste Rate)', 'month'], ['kleinStartBetrag', 'Kredit klein – Startbetrag (€)'],
+  ['grossStart', 'Kredit groß – Startmonat (erste Rate)', 'month'], ['grossStartBetrag', 'Kredit groß – Startbetrag (€)'],
   ['einstand', 'Wertpapiere – Einstand im Monat des ersten Stands (€)'], ['trQuartal', 'TR – Einzahlung pro Quartal, Feb/Mai/Aug/Nov (€)'],
   ['trSparplan', 'TR – Sparpläne pro Monat aus Cash (€)'], ['ingSparplan', 'ING – Sparpläne pro Monat (€)'],
   ['ingStart', 'ING – Sparplanstart', 'month'], ['ingEingezahlt', 'ING – eingezahlt bis zum Monat des ersten Stands (€)'],
@@ -218,7 +223,7 @@ function mOr(m) { return m === null ? 'nicht absehbar' : lab(m); }
 
 function korBox(kredit, nowM) {
   const L = KOR().filter(c => c.kredit === kredit).sort((a, b) => ymi(a.monat) - ymi(b.monat));
-  return '<details' + (L.length ? ' open' : '') + ' style="margin-top:.7rem;border-top:1px solid var(--line);padding-top:.6rem"><summary style="cursor:pointer;font-weight:600;font-size:.88rem">Restschuld korrigieren</summary>' +
+  return '<details' + (L.some(c => ymi(c.monat) >= ymi(K().staende[0].monat)) ? ' open' : '') + ' style="margin-top:.7rem;border-top:1px solid var(--line);padding-top:.6rem"><summary style="cursor:pointer;font-weight:600;font-size:.88rem">Restschuld korrigieren</summary>' +
     '<div class="kr-form" style="margin-top:.6rem"><label class="kr-f">Gilt für Monat<input type="month" data-km="' + kredit + '" value="' + iym(nowM) + '"></label>' +
     '<label class="kr-f">Restschuld laut Bank (€)<input type="text" inputmode="decimal" data-kv="' + kredit + '"></label>' +
     '<button class="btn btn-secondary" type="button" data-kr="kor" data-k="' + kredit + '">Übernehmen</button></div>' +
@@ -335,6 +340,38 @@ function bwTable(last) {
   }).join('') + '</tbody></table></div>';
 }
 
+function planTable(P, S) {
+  const b0 = ymi(S[0].monat), eK = ymi(P.kleinEnde), eG = ymi(P.grossEnde);
+  const kor = {}; KOR().forEach(c => { if (isYm(c.monat)) kor[c.kredit + ymi(c.monat)] = c.saldo; });
+  const line = (key, start, sb, base, rate, zins, end) => {
+    const i = zins / 1200, hist = isYm(start) && sb > 0 && ymi(start) < b0, first = hist ? ymi(start) : b0, o = { first: first };
+    let bal = hist ? sb : base;
+    for (let m = first; m <= end; m++) {
+      const ov = m === b0 ? (kor[key + m] !== undefined ? kor[key + m] : base) : kor[key + m];
+      let dev = null;
+      if (ov !== undefined) { if (m > first) dev = ov - bal; bal = ov; }
+      const z = bal * i, t = rate - z;
+      o[m] = { a: bal, z: z, t: t, e: bal - t, dev: dev };
+      bal -= t;
+    }
+    return o;
+  };
+  const G = line('gross', P.grossStart, P.grossStartBetrag, P.grossSaldo, P.grossRate, P.grossZins, eG);
+  const Kl = line('klein', P.kleinStart, P.kleinStartBetrag, P.kleinSaldo, P.kleinRate, P.kleinZins, eK);
+  const d = new Date(), nowM = d.getFullYear() * 12 + d.getMonth();
+  const e2 = v => v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+  const cell = (x, f) => '<td class="kr-num">' + (x ? e2(x[f]) : '–') + '</td>';
+  const dv = x => '<td class="kr-num">' + (x && x.dev !== null && Math.abs(x.dev) >= 0.005 ? (x.dev > 0 ? '+' : '−') + e2(Math.abs(x.dev)) : '') + '</td>';
+  let rows = '';
+  for (let m = Math.min(G.first, Kl.first); m <= Math.max(eK, eG); m++) {
+    const g = G[m], k = Kl[m];
+    rows += '<tr' + (m === nowM ? ' class="kr-cur"' : m === eK || m === eG ? ' class="kr-end"' : '') + '><td>' + mmY(m) + '</td>' + cell(g, 'a') + cell(g, 'z') + cell(g, 't') + cell(g, 'e') + cell(k, 'a') + cell(k, 'z') + cell(k, 't') + cell(k, 'e') +
+      '<td class="kr-num">' + e2((g ? g.a : 0) + (k ? k.a : 0)) + '</td><td class="kr-num">' + e2((g ? g.e : 0) + (k ? k.e : 0)) + '</td>' + dv(g) + dv(k) + '</tr>';
+  }
+  return '<div class="kr-plan"><table class="kr-table" style="min-width:1150px"><thead><tr><th>Monat</th><th>Groß Anfang</th><th>Groß Zins</th><th>Groß Tilgung</th><th>Groß Ende</th><th>Klein Anfang</th><th>Klein Zins</th><th>Klein Tilgung</th><th>Klein Ende</th><th>Gesamt Anfang</th><th>Gesamt Ende</th><th>Abw. groß</th><th>Abw. klein</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<div class="kr-sub" style="margin-top:.6rem">Anfang = Stand am 1. des Monats, Ende = nach der Rate am Monatsende. Nach dem Zinsbindungsende steht der Kredit auf 0 (abgelöst). Der laufende Monat ist grün markiert, die Monate der Zinsbindungsenden gelb. Abweichung = eingetragene Restschuld (erster Stand oder Korrektur) minus bis dahin gerechneter Plan. Negativ heißt mehr getilgt als geplant, positiv weniger.' + (isYm(P.kleinStart) || isYm(P.grossStart) ? '' : ' Für die Jahre vor dem ersten Stand in den Einstellungen Startmonat und Startbetrag der Kredite eintragen.') + '</div>';
+}
+
 function renderKredit() {
   const root = document.getElementById('kredit-root');
   if (!root) return;
@@ -368,6 +405,7 @@ function renderKredit() {
     '<button class="btn" type="button" data-kr="bw">Vormerken</button></div>' + bwTable(last) +
     '<div class="kr-sub" style="margin-top:.6rem">Einmalige Bewegungen neben den regelmäßigen Sparraten, zum Beispiel Bonus, Steuererstattung oder eine größere Ausgabe. Sie zählen in der Hochrechnung, bis für den Monat ein Stand eingetragen ist; danach steckt der Betrag im echten Cash-Wert. Passiert die Bewegung erst nach dem Eintragen des Monats, den Folgemonat wählen.</div></div>' +
     '<div class="kr-card"><h3 class="kr-h">ING-Depot – Rendite seit Start</h3><div id="kr-ing"></div></div>' +
+    '<details class="kr-card"><summary>Tilgungsplan</summary>' + planTable(P, S) + '</details>' +
     '<details class="kr-card"><summary>Regel fürs Sichern</summary><div id="kr-rules"></div></details>' +
     '<details class="kr-card"><summary>Einstellungen</summary>' + paramsForm(P) + '</details></div>';
   update();
@@ -411,7 +449,8 @@ function saveKor(root, kredit) {
   const m = root.querySelector('[data-km="' + kredit + '"]').value, v = num(root.querySelector('[data-kv="' + kredit + '"]').value);
   const k = state.kredit, b0 = ymi(k.staende[0].monat), e = ymi(kredit === 'klein' ? k.params.kleinEnde : k.params.grossEnde);
   if (!isYm(m) || v === null || v < 0) { toast('Bitte Monat und Restschuld eintragen'); return; }
-  if (ymi(m) < b0 || ymi(m) > e) { toast('Der Monat muss zwischen erstem Stand und Zinsbindungsende liegen'); return; }
+  const st = kredit === 'klein' ? k.params.kleinStart : k.params.grossStart, lo = isYm(st) && ymi(st) < b0 ? ymi(st) : b0;
+  if (ymi(m) < lo || ymi(m) > e) { toast('Der Monat muss zwischen Kreditstart oder erstem Stand und Zinsbindungsende liegen'); return; }
   if (typeof pushHistory === 'function') pushHistory();
   if (!Array.isArray(k.korrekturen)) k.korrekturen = [];
   const at = k.korrekturen.findIndex(c => c.kredit === kredit && c.monat === m), rec = { kredit: kredit, monat: m, saldo: v };
